@@ -61,9 +61,10 @@ exactly under the traced walls and marks it calibrated.
 | Office 3 | ~11'-6" × 9'-3" on the window wall, leaving an even 47" clear aisle under Office 1 | **Contractor-fixed** |
 | Office 4 | ~11' × 9'-3" on the window wall, next to the conference room; top wall in line with Office 3's | **Contractor-fixed** |
 | IT / Storage ("Stor") | ~8' × 10' against the top wall | Existing |
-| Kitchenette | Top-left corner, sink + refrigerator | Existing |
-| Cubicle Area A | 16' × 12' along the top wall ("12x16", 6–8) | Zone in the open area |
-| Cubicle Area B | 12' × 14' between the left wall and the conference room | Zone in the open area |
+| Walkway | 5'-0" from the conference room to Cubicle Area A (marked walking aisle) | Planned |
+| Kitchenette | Top-left corner, ~8'-2" × 8'-11" inside new walls on its bottom (on top of Area B) and right sides, door into the open area; sink + refrigerator | Walls planned |
+| Cubicle Area A | 16' × 12' along the top wall ("12x16", 6–8); the top wall here sits 1" out from the first trace so the marked dimensions fit exactly | Zone in the open area |
+| Cubicle Area B | 12' × 22' from the window wall up to the kitchenette wall, between the left wall and the conference room ("22x12") | Zone in the open area |
 | Doors | Main entry (pair of 3' leaves) at the top of the 45° wall; second suite door at the corridor jog | As drawn |
 | HVAC units | Four units along the window wall | Existing, locked |
 

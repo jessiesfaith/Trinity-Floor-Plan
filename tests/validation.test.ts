@@ -94,10 +94,10 @@ describe('validation', () => {
     expect(roomAt([big, small], { x: 50, y: 50 })?.id).toBe('small');
   });
 
-  it('sample cubicle areas match the planning inputs (12x16 and 14x12 clear)', () => {
+  it('sample cubicle areas match the planning inputs (12x16 and 12x22 clear)', () => {
     const p = createSampleProject();
     const rooms = p.scenarios[0].objects.filter((o): o is Room => o.kind === 'room' && o.roomType === 'cubicle-area');
     const areas = rooms.map((r) => Math.round(Math.abs(r.points.reduce((a, q, i) => a + (q.x * r.points[(i + 1) % 4].y - r.points[(i + 1) % 4].x * q.y), 0) / 2) / 144));
-    expect(areas.sort()).toEqual([168, 192]);
+    expect(areas.sort()).toEqual([192, 264]);
   });
 });

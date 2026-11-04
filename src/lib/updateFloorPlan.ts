@@ -15,6 +15,9 @@ function isFloorPlanObject(o: PlanObject, starterNames: Set<string>): boolean {
   return starterNames.has(`${o.kind}:${o.name}`);
 }
 
+/** Names the starter plan's own objects had in earlier releases, so updating replaces them too. */
+const PREVIOUS_STARTER_NAMES = ["dimension:Area B width (14')"];
+
 export interface FloorPlanUpdate {
   project: Project;
   /** Objects the user placed, kept in each layout (summed over layouts). */
@@ -25,7 +28,7 @@ export interface FloorPlanUpdate {
 
 export function updateFloorPlan(project: Project): FloorPlanUpdate {
   const starter = createSampleProject().scenarios[0].objects;
-  const starterNames = new Set(starter.filter((o) => o.kind !== 'wall' && o.kind !== 'door' && o.kind !== 'room').map((o) => `${o.kind}:${o.name}`));
+  const starterNames = new Set([...starter.filter((o) => o.kind !== 'wall' && o.kind !== 'door' && o.kind !== 'room').map((o) => `${o.kind}:${o.name}`), ...PREVIOUS_STARTER_NAMES]);
   const now = new Date().toISOString();
   let kept = 0;
 

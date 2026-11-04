@@ -12,7 +12,7 @@
 import type { Furniture, PlanObject, PlanSettings, Project, Pt, Room, Scenario, Wall } from '@/types/plan';
 import { add, dist, norm, perp, scale, signedArea, sub, cross } from './geometry';
 import { BUILT_IN_TEMPLATES } from './library';
-import { furnitureFromTemplate, makeDimension, makeDoor, makeLabel, makeRoom, makeWall, uid } from './objects';
+import { furnitureFromTemplate, makeAisle, makeDimension, makeDoor, makeLabel, makeRoom, makeWall, uid } from './objects';
 import { generateLayouts, type OptionKey } from './generator';
 
 export const DEFAULT_SETTINGS: PlanSettings = {
@@ -149,12 +149,15 @@ interface SuiteGeometry {
 
 function buildSuite(): SuiteGeometry {
   // ---- Key traced points (feet).
+  // The top wall over Cubicle Area A and IT / Storage sits 1" further out than first traced
+  // (within the ±6" trace), so the marked 14' conference room + 5' walkway + 12' Area A fit exactly.
+  const T_TOP_A = T_TOP + 1 / 12;
   const L = S(0, 0); // left corner on the window wall
   const B = S(82.16, 0); // far tip where the 45° wall meets the window wall
   const E1 = S(52.16, 30); // top of the 45° wall at the main entry
   const S2 = S(45.2, 30);
-  const S1 = S(42.8, 32);
-  const A1 = S(17.8, 32);
+  const S1 = S(42.8, T_TOP_A);
+  const A1 = S(17.8, T_TOP_A);
   const N1 = S(17.8, 26.7);
   const K3 = S(14.3, 29.5);
   const K2 = S(10.4, 29.5);
@@ -181,6 +184,14 @@ function buildSuite(): SuiteGeometry {
   const stL = 34.41;
   const stR = 42.45;
   const stB = 21.85;
+  // Kitchenette walls (new): the bottom wall sits right on top of Cubicle Area B (22' clear from
+  // the window wall); the right wall keeps the traced 8'-6" inside width, with a door into the open area.
+  const kB = 4 / 12 + 22 + IW; // bottom wall centerline
+  const kR = 8.5 + IW; // right wall centerline
+  const kTop = S(kR, K1.y - ((kR - K1.x) / (K2.x - K1.x)) * (K1.y - K2.y)); // where it meets the K1–K2 wall
+  // 5'-0" walkway between the conference room and Cubicle Area A.
+  const walkB = confT + IW; // conference room's top face
+  const walkT = walkB + 5;
 
   const walls: Wall[] = [
     // Exterior / demising walls
@@ -196,9 +207,12 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(K1, TL, [], 'exterior'),
     ...wallFt(TL, L, [], 'exterior'),
     // IT / storage room (existing)
-    ...wallFt(S(stL, stB), S(stL, T_TOP)),
+    ...wallFt(S(stL, stB), S(stL, T_TOP_A)),
     ...wallFt(S(stL, stB), S(stR, stB), [[0.5, 36]]), // door in the bottom wall, hinged at the left corner
-    ...wallFt(S(stR, stB), S(stR, T_TOP)),
+    ...wallFt(S(stR, stB), S(stR, T_TOP_A)),
+    // Kitchenette
+    ...wallFt(S(0, kB), S(kR, kB)),
+    ...wallFt(S(kR, kB), kTop, [[1, 36]]), // kitchen door, near the bottom of the right wall
     // Conference room (contractor)
     ...wallFt(S(confL, 0), S(confL, confT), [], 'interior', CONTRACTOR),
     ...wallFt(S(confL, confT), S(confR, confT), [[0.75, 36], [20.67, 36]], 'interior', CONTRACTOR),
@@ -226,28 +240,34 @@ function buildSuite(): SuiteGeometry {
   const office3 = fixedRoom(R('Office 3', 'office', [S(div43, 0), S(div32, 0), S(div32, o3T), S(div43, o3T)], '#eef0f6'));
   const office2 = fixedRoom(R('Office 2', 'office', [S(div32, 0), B, o1e, o2D, S(div32, o3T)], '#eef0f6'));
   const office1 = fixedRoom(R('Office 1', 'office', [o1a, o1e, E1], '#eef0f6'));
-  const storage = R('IT / Storage', 'it', [S(stL, stB), S(stR, stB), S(stR, T_TOP), S(stL, T_TOP)], '#eceff3');
+  const storage = R('IT / Storage', 'it', [S(stL, stB), S(stR, stB), S(stR, T_TOP_A), S(stL, T_TOP_A)], '#eceff3');
   const open = R(
     'Open Area',
     'open',
-    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2D, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, K1, TL],
+    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2D, o1e, o1a, E1, S2, S1, S(stR, T_TOP_A), S(stR, stB), S(stL, stB), S(stL, T_TOP_A), A1, N1, K3, K2, kTop, S(kR, kB), S(0, kB)],
     '#f5f8f7',
   );
   // Zones inside the open area (no walls of their own). Dimensions are clear floor.
   const ext = 4 / 12; // half of an 8" exterior wall
-  // Area A: 16' along the top wall starting at the inside face of the A1–N1 wall, 12' deep.
+  // Area A: 16' along the top wall starting at the inside face of the A1–N1 wall, 12' deep,
+  // ending at the 5'-0" walkway above the conference room.
   const aL = A1.x + ext;
-  const aTop = T_TOP - ext;
+  const aTop = T_TOP_A - ext;
   const areaA = Z('Cubicle Area A', 'cubicle-area', [S(aL, aTop - 12), S(aL + 16, aTop - 12), S(aL + 16, aTop), S(aL, aTop)], '#e3f4f3', {
     planning: { widthFt: 12, lengthFt: 16, targetMin: 6, targetMax: 8, department: 'Inside Sales / Operations' },
-    notes: '12 x 16 ft cube area marked on the plan ("12x16", 6–8 people).',
+    notes: '12 x 16 ft cube area marked on the plan ("12x16", 6–8 people), above the 5 ft walkway from the conference room.',
   });
-  // Area B: 12' clear from the left wall to the conference wall, 14' deep (= conference depth).
-  const areaB = Z('Cubicle Area B', 'cubicle-area', [S(ext, ext), S(ext + 12, ext), S(ext + 12, ext + 14), S(ext, ext + 14)], '#e3f4f3', {
-    planning: { widthFt: 14, lengthFt: 12, targetMin: 6, targetMax: 8, department: 'Team Workstations' },
-    notes: '12 ft along the window wall (to the conference room) x 14 ft deep. Page 1 of the PDF also notes "22x12" here.',
+  // Area B: 12' clear from the left wall to the conference wall, 22' deep up to the kitchenette wall.
+  const areaB = Z('Cubicle Area B', 'cubicle-area', [S(ext, ext), S(ext + 12, ext), S(ext + 12, ext + 22), S(ext, ext + 22)], '#e3f4f3', {
+    planning: { widthFt: 12, lengthFt: 22, targetMin: 6, targetMax: 8, department: 'Team Workstations' },
+    notes: '12 ft along the window wall (to the conference room) x 22 ft deep, up to the kitchenette wall ("22x12").',
   });
-  const kitchen = Z('Kitchenette', 'kitchen', [S(ext, 23.5), S(8.5, 23.5), S(8.5, 31.4), S(8.2, T_TOP - ext), S(ext, T_TOP - ext)], '#fdf3e4');
+  const kitchen = R('Kitchenette', 'kitchen', [S(0, kB), S(kR, kB), kTop, K1, TL], '#fdf3e4');
+  const walkway: PlanObject = {
+    ...makeAisle(F(aL + 8, 0).x, F(0, (walkB + walkT) / 2).y, 16 * 12, 5 * 12),
+    name: "Walkway (5')",
+    notes: '5 ft walkway from the conference room to Cubicle Area A.',
+  };
   for (const z of [areaA, areaB, kitchen]) z.label = { ...z.label, fontSize: 11, background: 'rgba(255,255,255,0.85)' };
   areaB.label.offset = { x: 14, y: -24 };
   conference.label.fontSize = 16;
@@ -260,6 +280,7 @@ function buildSuite(): SuiteGeometry {
     doorFt(S2, E1, 0.48, S(47, 25), 'Main entry (left leaf)'),
     doorFt(N1, K3, 0.74, S(16, 24), 'Suite door (corridor)'),
     doorFt(S(stL, stB), S(stR, stB), 0.5, S(38, 24), 'IT / Storage door'),
+    doorFt(S(kR, kB), kTop, 1, S(5, 25), 'Kitchenette door'),
     doorFt(S(confL, confT), S(confR, confT), 0.75, S(15, 8), 'Conference door 1', 36, CONTRACTOR),
     doorFt(S(confR, confT), S(confL, confT), 0.75, S(34, 8), 'Conference door 2', 36, CONTRACTOR),
     doorFt(S(confR, o3T), S(div43, o3T), 0.4, S(40, 5), 'Office 4 door', 36, CONTRACTOR),
@@ -297,7 +318,7 @@ function buildSuite(): SuiteGeometry {
     dimFt(L, L, 'Area A length (16\')', 20, { roomId: areaA.id, edgeIndex: 2 }),
     dimFt(L, L, 'Area A width (12\')', 20, { roomId: areaA.id, edgeIndex: 3 }),
     dimFt(L, L, 'Area B length (12\')', -20, { roomId: areaB.id, edgeIndex: 0 }),
-    dimFt(L, L, 'Area B width (14\')', -20, { roomId: areaB.id, edgeIndex: 3 }),
+    dimFt(L, L, 'Area B width (22\')', -20, { roomId: areaB.id, edgeIndex: 3 }),
   ];
   // Attached dimensions follow their room edge (see syncAttachedDimensions), so seed a/b from the edges.
   for (const d of dims) {
@@ -313,7 +334,7 @@ function buildSuite(): SuiteGeometry {
   source.style = { ...source.style, color: '#d62828', fontSize: 9, background: '#fff5f5' };
   source.name = 'Source note';
 
-  const base: PlanObject[] = [...rooms, ...walls, ...doors, ...fixtures, ...dims, street, source];
+  const base: PlanObject[] = [...rooms, walkway, ...walls, ...doors, ...fixtures, ...dims, street, source];
   return { base, areaA, areaB };
 }
 
