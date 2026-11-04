@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+  background: #eef0f4;
+  color: #14213d;
+  overscroll-behavior: none;
+}
+
+.panel-section {
+  @apply border-b border-slate-200 p-3;
+}
+.panel-title {
+  @apply mb-2 text-xs font-bold uppercase tracking-wider text-navy;
+}
