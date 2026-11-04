@@ -168,10 +168,12 @@ function buildSuite(): SuiteGeometry {
   const corrT = 11.75; // office corridor wall
   const div43 = 48.29;
   const div32 = 60.25;
-  const o2Top = S(65.4, 16.76); // where office 2's angled wall meets the 45° wall
-  const o1a = S(51.67, 16.57);
+  const o2Top = S(69.272, 12.888); // where office 2's angled wall meets the 45° wall
+  // Office 1: right triangle, 13'-0" clear on the entry-side wall (o1a–o1b) and 15'-0" clear
+  // on the wall toward Office 2 (o1a–o1c), long side on the 45° wall (contractor markup "13×15").
+  const o1a = S(52.695, 14.685); // the right-angle corner
   const o1b = S(53.68, 28.48);
-  const o1c = S(64.74, 17.42);
+  const o1c = S(68.612, 13.548);
   // IT / storage room
   const stL = 34.41;
   const stR = 42.45;

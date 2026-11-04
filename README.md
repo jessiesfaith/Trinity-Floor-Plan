@@ -56,7 +56,7 @@ exactly under the traced walls and marks it calibrated.
 | Space | As traced | Status |
 |---|---|---|
 | Conference Room | 24' × 14' clear, on the window wall 12' from the left corner, 2 doors | **Contractor-fixed** |
-| Office 1 | Triangle on the 45° wall (red markup, "13×15") | **Contractor-fixed** |
+| Office 1 | Right triangle on the 45° wall: 13' clear on the entry side × 15' clear toward Office 2 (red markup, "13×15") | **Contractor-fixed** |
 | Office 2 | On the window wall at the far tip, angled wall to the corridor | **Contractor-fixed** |
 | Office 3 | ~12' × 11'-9" on the window wall | **Contractor-fixed** |
 | Office 4 | ~11' × 11'-9" on the window wall, next to the conference room | **Contractor-fixed** |
