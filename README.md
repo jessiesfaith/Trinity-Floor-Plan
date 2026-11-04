@@ -59,7 +59,7 @@ exactly under the traced walls and marks it calibrated.
 | Office 1 | Right triangle by the main entry: 15' clear up the entry-side wall × 15' clear along its level bottom wall, long side on the 45° wall (red markup said "13×15") | **Contractor-fixed** |
 | Office 2 | On the window wall at the far tip; its door is level with Office 3's top wall, and a wall runs from the door up to Office 1's corner on the 45° wall | **Contractor-fixed** |
 | Office 3 | ~11'-6" × 9'-3" on the window wall, leaving an even 47" clear aisle under Office 1 | **Contractor-fixed** |
-| Office 4 | ~11' × 11'-9" on the window wall, next to the conference room | **Contractor-fixed** |
+| Office 4 | ~11' × 9'-3" on the window wall, next to the conference room; top wall in line with Office 3's | **Contractor-fixed** |
 | IT / Storage ("Stor") | ~8' × 10' against the top wall | Existing |
 | Kitchenette | Top-left corner, sink + refrigerator | Existing |
 | Cubicle Area A | 16' × 12' along the top wall ("12x16", 6–8) | Zone in the open area |

@@ -9,6 +9,7 @@ import { furnitureFromTemplate, roomAt } from '@/lib/objects';
 import { BUILT_IN_TEMPLATES } from '@/lib/library';
 import { AUTOSAVE_KEY, MANUAL_KEY, idbGet, idbSet, parseProject } from '@/lib/persistence';
 import { createSampleProject } from '@/lib/sampleProject';
+import { isOutdatedUneditedSample } from '@/lib/sampleFingerprint';
 import Toolbar from './Toolbar';
 import LeftSidebar from './LeftSidebar';
 import PropertiesPanel from './PropertiesPanel';
@@ -32,11 +33,17 @@ export default function Planner() {
   const viewCenter = useRef<() => Pt>(() => ({ x: 0, y: 0 }));
   const st = usePlanStore.getState;
 
-  // ---- Load: autosave -> manual save -> sample project.
+  // ---- Load: autosave -> manual save -> sample project. An unedited copy of an older starter
+  // plan is replaced by the current one, so returning visitors see starter-plan updates.
   useEffect(() => {
     (async () => {
       try {
         const saved = (await idbGet<string>(AUTOSAVE_KEY)) ?? (await idbGet<string>(MANUAL_KEY));
+        if (saved && isOutdatedUneditedSample(JSON.parse(saved))) {
+          st().loadProject(createSampleProject());
+          setReady(true);
+          return;
+        }
         if (saved) {
           st().loadProject(parseProject(saved), { markSaved: true });
           setReady(true);

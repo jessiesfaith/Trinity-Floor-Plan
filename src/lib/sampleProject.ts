@@ -165,7 +165,6 @@ function buildSuite(): SuiteGeometry {
   const confL = 4 / 12 + 12 + IW; // centerline: 12'-0" clear from the left wall
   const confR = confL + IW + 24 + IW; // 24'-0" clear
   const confT = 4 / 12 + 14 + IW; // 14'-0" clear from the window wall
-  const corrT = 11.75; // office corridor wall
   const div43 = 48.29;
   const div32 = 60.25;
   // Office 1: right triangle by the main entry, 15'-0" clear up the entry-side wall (which runs
@@ -176,7 +175,7 @@ function buildSuite(): SuiteGeometry {
   // The aisle under Office 1 is an even 47" clear: Office 3's top wall drops to stay level and
   // 47" below Office 1's bottom wall. Office 2's door sits on the same line; a wall runs from
   // the door's far jamb up to Office 1's corner on the 45° wall.
-  const o3T = 9.779; // Office 3's top wall (Office 4's stays at corrT)
+  const o3T = 9.779; // top wall of Offices 3 and 4 (one straight line)
   const o2D = S(div32 + 4, o3T); // far jamb of Office 2's door
   // IT / storage room
   const stL = 34.41;
@@ -205,9 +204,9 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(S(confL, confT), S(confR, confT), [[0.75, 36], [20.67, 36]], 'interior', CONTRACTOR),
     ...wallFt(S(confR, confT), S(confR, 0), [], 'interior', CONTRACTOR),
     // Offices 2–4 (contractor)
-    ...wallFt(S(confR, corrT), S(div43, corrT), [[0.4, 36]], 'interior', CONTRACTOR),
+    ...wallFt(S(confR, o3T), S(div43, o3T), [[0.4, 36]], 'interior', CONTRACTOR), // Office 4 top wall + door
     ...wallFt(S(div32, o3T), S(div43, o3T), [[0.3, 36]], 'interior', CONTRACTOR), // Office 3 top wall + door
-    ...wallFt(S(div43, corrT), S(div43, 0), [], 'interior', CONTRACTOR),
+    ...wallFt(S(div43, o3T), S(div43, 0), [], 'interior', CONTRACTOR),
     ...wallFt(S(div32, o3T), S(div32, 0), [], 'interior', CONTRACTOR),
     ...wallFt(S(div32, o3T), o2D, [[0.5, 36]], 'interior', CONTRACTOR), // Office 2 door
     ...wallFt(o2D, o1e, [], 'interior', CONTRACTOR), // Office 2 wall up to Office 1's corner
@@ -223,7 +222,7 @@ function buildSuite(): SuiteGeometry {
   const fixedRoom = (r: Room): Room => ({ ...r, fixed: CONTRACTOR, locked: true, notes: 'Contractor-fixed per Floor_Plan.pdf. Unlock only if the contractor confirms a change.' });
 
   const conference = fixedRoom(R('Conference Room', 'conference', [S(confL, 0), S(confR, 0), S(confR, confT), S(confL, confT)], '#e9eef8'));
-  const office4 = fixedRoom(R('Office 4', 'office', [S(confR, 0), S(div43, 0), S(div43, corrT), S(confR, corrT)], '#eef0f6'));
+  const office4 = fixedRoom(R('Office 4', 'office', [S(confR, 0), S(div43, 0), S(div43, o3T), S(confR, o3T)], '#eef0f6'));
   const office3 = fixedRoom(R('Office 3', 'office', [S(div43, 0), S(div32, 0), S(div32, o3T), S(div43, o3T)], '#eef0f6'));
   const office2 = fixedRoom(R('Office 2', 'office', [S(div32, 0), B, o1e, o2D, S(div32, o3T)], '#eef0f6'));
   const office1 = fixedRoom(R('Office 1', 'office', [o1a, o1e, E1], '#eef0f6'));
@@ -231,7 +230,7 @@ function buildSuite(): SuiteGeometry {
   const open = R(
     'Open Area',
     'open',
-    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, corrT), S(div43, corrT), S(div43, o3T), S(div32, o3T), o2D, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, K1, TL],
+    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2D, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, K1, TL],
     '#f5f8f7',
   );
   // Zones inside the open area (no walls of their own). Dimensions are clear floor.
@@ -263,7 +262,7 @@ function buildSuite(): SuiteGeometry {
     doorFt(S(stL, stB), S(stR, stB), 0.5, S(38, 24), 'IT / Storage door'),
     doorFt(S(confL, confT), S(confR, confT), 0.75, S(15, 8), 'Conference door 1', 36, CONTRACTOR),
     doorFt(S(confR, confT), S(confL, confT), 0.75, S(34, 8), 'Conference door 2', 36, CONTRACTOR),
-    doorFt(S(confR, corrT), S(div43, corrT), 0.4, S(40, 6), 'Office 4 door', 36, CONTRACTOR),
+    doorFt(S(confR, o3T), S(div43, o3T), 0.4, S(40, 5), 'Office 4 door', 36, CONTRACTOR),
     doorFt(S(div32, o3T), S(div43, o3T), 0.3, S(57, 5), 'Office 3 door', 36, CONTRACTOR),
     doorFt(S(div32, o3T), o2D, 0.5, S(62, 5), 'Office 2 door', 36, CONTRACTOR),
     doorFt(o1a, E1, 0.6, S(56, 20), 'Office 1 door', 36, CONTRACTOR),
