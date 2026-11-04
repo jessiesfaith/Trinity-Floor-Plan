@@ -75,7 +75,7 @@ exactly as drawn, with the cubicle areas empty.
 ## Keyboard
 
 `V` select · `H` pan · `M` measure · `W` wall · `R` room (or rotate selection 90°) · `D` door · `A` aisle · `T` text · `L` dimension ·
-`Ctrl+Z / Ctrl+Shift+Z` undo/redo · `Ctrl+D` duplicate · `Ctrl+G / Ctrl+Shift+G` group/ungroup · `Del` delete · arrows nudge (Shift = 1 ft) · `Ctrl+S` save · `Space`+drag pan · scroll to zoom.
+`Ctrl+Z / Ctrl+Shift+Z` undo/redo · `Ctrl+D` duplicate · `Ctrl+G / Ctrl+Shift+G` group/ungroup · `Del` delete · arrows nudge (Shift = 1 ft) · `Ctrl+S` save · drag empty space (or `Space`+drag) to pan · `Shift`+drag to box-select · scroll to zoom · `Shift`+scroll or trackpad swipe to scroll sideways.
 
 ## Architecture
 

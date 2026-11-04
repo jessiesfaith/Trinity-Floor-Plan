@@ -58,6 +58,8 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
   const [live, setLive] = useState<(Furniture | Aisle) | null>(null);
   const dragStart = useRef<{ id: string; start: Map<string, Pt> } | null>(null);
   const panStart = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
+  /** Set once a pan drag moves past a few pixels, so releasing it doesn't count as a click. */
+  const panMoved = useRef(false);
 
   const project = usePlanStore((s) => s.project);
   const selectedIds = usePlanStore((s) => s.selectedIds);
@@ -171,6 +173,13 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
     return !o.locked && !layerOf(l).locked && tool === 'select';
   };
 
+  // End a pan even if the mouse is released outside the canvas.
+  useEffect(() => {
+    const up = () => (panStart.current = null);
+    window.addEventListener('mouseup', up);
+    return () => window.removeEventListener('mouseup', up);
+  }, []);
+
   // ---- Keyboard: space-pan, escape
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -226,8 +235,16 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
   // ---- Stage events
   const onWheel = (e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
+    const { deltaX, deltaY, shiftKey, ctrlKey, metaKey } = e.evt;
+    // Horizontal trackpad swipe or Shift+wheel scrolls the view sideways.
+    if (!ctrlKey && !metaKey && (shiftKey || Math.abs(deltaX) > Math.abs(deltaY))) {
+      const dx = shiftKey && deltaX === 0 ? deltaY : deltaX;
+      const dy = shiftKey ? 0 : deltaY;
+      setViewState((v) => ({ ...v, x: v.x - dx, y: v.y - dy }));
+      return;
+    }
     const p = stageRef.current?.getPointerPosition();
-    if (e.evt.ctrlKey || e.evt.metaKey || !e.evt.shiftKey) zoomBy(e.evt.deltaY > 0 ? 1 / 1.12 : 1.12, p ?? undefined);
+    zoomBy(deltaY > 0 ? 1 / 1.12 : 1.12, p ?? undefined);
   };
 
   const isBackground = (e: KonvaEventObject<MouseEvent>) => {
@@ -235,7 +252,16 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
     return t === t.getStage() || t.name() === 'bg' || t.name() === 'grid';
   };
 
+  /** True when the pressed node (or an ancestor) handles its own drag: draggable objects, vertex handles, transformer anchors. */
+  const grabsDrag = (n: Konva.Node | null) => {
+    for (let x = n; x && x !== x.getStage(); x = x.getParent()) {
+      if (x.draggable() || x.getClassName() === 'Transformer') return true;
+    }
+    return false;
+  };
+
   const onMouseDown = (e: KonvaEventObject<MouseEvent>) => {
+    panMoved.current = false;
     const p = pointer();
     if (!p) return;
     const middle = e.evt.button === 1;
@@ -243,9 +269,15 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
       panStart.current = { x: e.evt.clientX, y: e.evt.clientY, vx: view.x, vy: view.y };
       return;
     }
-    if (tool === 'select' && isBackground(e)) {
-      if (!e.evt.shiftKey) store.getState().select([]);
+    if (tool === 'select' && isBackground(e) && e.evt.shiftKey) {
+      // Shift+drag on empty space box-selects.
       setMarquee({ a: p, b: p });
+      return;
+    }
+    if (tool === 'select' && e.evt.button === 0 && !grabsDrag(e.target)) {
+      // A plain drag on empty space or on anything that can't itself be dragged pans the view.
+      if (isBackground(e)) store.getState().select([]);
+      panStart.current = { x: e.evt.clientX, y: e.evt.clientY, vx: view.x, vy: view.y };
       return;
     }
     if (tool === 'aisle') {
@@ -259,6 +291,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
     if (panStart.current) {
       const s = stageRef.current!.getPointerPosition()!;
       const rect = stageRef.current!.container().getBoundingClientRect();
+      if (Math.hypot(s.x + rect.left - panStart.current.x, s.y + rect.top - panStart.current.y) > 3) panMoved.current = true;
       setViewState((v) => ({ ...v, x: panStart.current!.vx + (s.x + rect.left - panStart.current!.x), y: panStart.current!.vy + (s.y + rect.top - panStart.current!.y) }));
       return;
     }
@@ -492,6 +525,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
   const onSelect = (o: PlanObject) => (e: KonvaEventObject<MouseEvent>) => {
     if (tool !== 'select') return;
     e.cancelBubble = true;
+    if (panMoved.current) return; // the press was a pan, not a click
     store.getState().select([o.id], e.evt.shiftKey);
   };
 
@@ -1165,7 +1199,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
 }
 
 const TOOL_HINT: Record<string, string> = {
-  select: 'Click to select · Shift-click to add · Drag empty space to box-select · Double-click a name to edit · Space+drag to pan',
+  select: 'Click to select · Shift-click to add · Drag empty space to pan · Shift+drag to box-select · Double-click a name to edit',
   pan: 'Drag to pan · Scroll to zoom',
   measure: 'Click two points to measure (snaps to walls/corners; hold Alt to disable)',
   calibrate: 'Click two points on a known dimension of the imported plan',
