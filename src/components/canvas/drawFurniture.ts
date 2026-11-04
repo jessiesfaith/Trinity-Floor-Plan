@@ -84,6 +84,16 @@ export function drawFurniture(ctx: Ctx, f: Furniture, pres: boolean, stroke: str
         ctx.lineTo(hw, hd);
         ctx.stroke();
         ctx.setLineDash([]);
+        // Arrow out of the opening, so the facing direction reads at a glance.
+        const a = Math.min(6, w / 8);
+        ctx.beginPath();
+        ctx.moveTo(-a, hd - a * 1.6);
+        ctx.lineTo(0, hd - a * 0.4);
+        ctx.lineTo(a, hd - a * 1.6);
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = '#0f9d9a';
+        ctx.stroke();
+        ctx.strokeStyle = stroke;
       }
       break;
     }

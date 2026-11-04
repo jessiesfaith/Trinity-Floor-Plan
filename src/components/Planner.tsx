@@ -10,6 +10,7 @@ import { BUILT_IN_TEMPLATES } from '@/lib/library';
 import { AUTOSAVE_KEY, MANUAL_KEY, idbGet, idbSet, parseProject } from '@/lib/persistence';
 import { createSampleProject } from '@/lib/sampleProject';
 import { isOutdatedUneditedSample } from '@/lib/sampleFingerprint';
+import { rotateObjects } from '@/lib/orientation';
 import Toolbar from './Toolbar';
 import LeftSidebar from './LeftSidebar';
 import PropertiesPanel from './PropertiesPanel';
@@ -150,8 +151,7 @@ export default function Planner() {
         const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key] as [number, number];
         s.moveSelected(d[0], d[1]);
       } else if (!mod && e.key.toLowerCase() === 'r' && s.selectedIds.length && s.tool === 'select') {
-        const ids = new Set(s.selectedIds);
-        s.setObjects((objs) => objs.map((o) => (ids.has(o.id) && !o.locked && (o.kind === 'furniture' || o.kind === 'aisle') ? { ...o, rotation: (o.rotation + (e.shiftKey ? -90 : 90) + 360) % 360 } : o)));
+        s.setObjects((objs) => rotateObjects(objs, s.selectedIds, e.shiftKey ? -90 : 90));
       } else if (!mod && !e.altKey) {
         const map: Record<string, Parameters<typeof s.setTool>[0]> = { v: 'select', h: 'pan', m: 'measure', w: 'wall', d: 'door', a: 'aisle', t: 'label', l: 'dimension' };
         const t = map[e.key.toLowerCase()];

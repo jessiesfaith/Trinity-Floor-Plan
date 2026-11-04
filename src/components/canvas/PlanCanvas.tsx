@@ -15,7 +15,8 @@ import { formatArea, formatLength } from '@/lib/units';
 import { contentBounds, dimensionGeometry } from '@/lib/svgRender';
 import type { ValidationResult } from '@/lib/validation';
 import { drawFurniture } from './drawFurniture';
-import { Maximize, Minus, Plus } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize, Minus, Plus, RotateCcw, RotateCw } from 'lucide-react';
+import { faceObjects, facingOf, rotateObjects, type Facing } from '@/lib/orientation';
 
 const TEAL = '#0f9d9a';
 const RED = '#d62828';
@@ -623,6 +624,27 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
   );
 
   const cursorStyle = tool === 'pan' || spaceDown ? 'grab' : tool === 'select' ? 'default' : 'crosshair';
+
+  // Floating turn bar under the selected, unlocked furniture / aisles (hidden while dragging).
+  const turnBar = (() => {
+    if (tool !== 'select' || live || pres) return null;
+    const sel = objects.filter((o): o is Furniture | Aisle => selected.has(o.id) && (o.kind === 'furniture' || o.kind === 'aisle') && canEdit(o));
+    if (!sel.length) return null;
+    const pts = sel.flatMap((o) => footprint(o));
+    const minX = Math.min(...pts.map((p) => p.x));
+    const maxX = Math.max(...pts.map((p) => p.x));
+    const minY = Math.min(...pts.map((p) => p.y));
+    const maxY = Math.max(...pts.map((p) => p.y));
+    const furn = sel.filter((o): o is Furniture => o.kind === 'furniture');
+    const facings = new Set(furn.map((o) => facingOf(o.rotation)));
+    return {
+      left: Math.min(Math.max(view.x + ((minX + maxX) / 2) * view.k, 150), size.w - 150),
+      // Below the selection, clear of the rotate handle above it; above it if there's no room below.
+      top: view.y + maxY * view.k + 14 + 30 <= size.h ? view.y + maxY * view.k + 14 : Math.max(view.y + minY * view.k - 74, 6),
+      furniture: furn.length > 0,
+      facing: facings.size === 1 ? [...facings][0] : null,
+    };
+  })();
   const roomEditable = (r: Room) => selected.has(r.id) && canEdit(r);
 
   return (
@@ -849,6 +871,10 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
                   y={c.y}
                   rotation={r.label.rotation}
                   draggable={selected.has(r.id) && canEdit(r)}
+                  // Only the selected room's label takes clicks (to drag it). Otherwise clicks pass
+                  // through to cubicles and furniture under the label; double-clicking the room
+                  // itself still edits its name.
+                  listening={selected.has(r.id)}
                   onDragEnd={(e) => {
                     const np = { x: e.target.x(), y: e.target.y() };
                     const cen = centroid(r.points);
@@ -1179,6 +1205,36 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
       <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded bg-navy/85 px-2 py-1 text-[11px] text-white shadow">
         {cursor ? `${fmt(cursor.x)}, ${fmt(cursor.y)}` : '—'} · {TOOL_HINT[tool]}
       </div>
+      {/* Turn bar for the selected cubicles / desks */}
+      {turnBar && (
+        <div
+          className="absolute z-10 flex items-center gap-0.5 rounded-md border border-slate-200 bg-white px-1 py-0.5 text-[11px] text-slate-600 shadow"
+          style={{ left: turnBar.left, top: turnBar.top, transform: 'translateX(-50%)' }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <button className="rounded p-1 hover:bg-slate-100" title="Rotate 90° counter-clockwise (Shift+R)" onClick={() => store.getState().setObjects((o) => rotateObjects(o, selectedIds, -90))}>
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
+          <button className="rounded p-1 hover:bg-slate-100" title="Rotate 90° clockwise (R)" onClick={() => store.getState().setObjects((o) => rotateObjects(o, selectedIds, 90))}>
+            <RotateCw className="h-3.5 w-3.5" />
+          </button>
+          {turnBar.furniture && (
+            <>
+              <span className="ml-1.5 mr-0.5 whitespace-nowrap">Opening faces</span>
+              {([['up', ArrowUp], ['right', ArrowRight], ['down', ArrowDown], ['left', ArrowLeft]] as [Facing, typeof ArrowUp][]).map(([dir, Icon]) => (
+                <button
+                  key={dir}
+                  className={`rounded p-1 hover:bg-slate-100 ${turnBar.facing === dir ? 'bg-teal-100 text-teal-600' : ''}`}
+                  title={`Turn so the opening / front faces ${dir}`}
+                  onClick={() => store.getState().setObjects((o) => faceObjects(o, selectedIds, dir))}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </button>
+              ))}
+            </>
+          )}
+        </div>
+      )}
       {measure && tool === 'measure' && draft.length === 0 && (
         <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs shadow">
           <span className="font-semibold text-measure">Measured {fmt(dist(measure.a, measure.b))}</span>
@@ -1199,7 +1255,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
 }
 
 const TOOL_HINT: Record<string, string> = {
-  select: 'Click to select · Shift-click to add · Drag empty space to pan · Shift+drag to box-select · Double-click a name to edit',
+  select: 'Click to select · Shift-click to add · Drag empty space to pan · Shift+drag to box-select · R rotates the selection · Double-click a name to edit',
   pan: 'Drag to pan · Scroll to zoom',
   measure: 'Click two points to measure (snaps to walls/corners; hold Alt to disable)',
   calibrate: 'Click two points on a known dimension of the imported plan',
