@@ -28,14 +28,14 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     expect(b.height / 12).toBeCloseTo(14, 2);
   });
 
-  it('Office 1 is a right triangle, 13 x 15 ft clear, as marked', () => {
+  it('Office 1 is a 15 x 15 ft clear right triangle with its long side on the 45-degree wall', () => {
     const pts = room('Office 1').points.map((q) => ({ x: q.x / 12, y: q.y / 12 }));
     expect(pts).toHaveLength(3);
     const len = (i: number) => Math.hypot(pts[(i + 1) % 3].x - pts[i].x, pts[(i + 1) % 3].y - pts[i].y);
     const sides = [0, 1, 2].map(len).sort((a, b) => a - b);
-    expect(sides[0]).toBeCloseTo(13, 2);
+    expect(sides[0]).toBeCloseTo(15, 2);
     expect(sides[1]).toBeCloseTo(15, 2);
-    expect(sides[2]).toBeCloseTo(Math.hypot(13, 15), 2); // right angle between the 13 and 15 ft sides
+    expect(sides[2]).toBeCloseTo(Math.hypot(15, 15), 2); // right angle between the two 15 ft sides
   });
 
   it('cubicle areas match the marked 12 x 16 and 12 x 14 dimensions', () => {

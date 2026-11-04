@@ -168,16 +168,16 @@ function buildSuite(): SuiteGeometry {
   const corrT = 11.75; // office corridor wall
   const div43 = 48.29;
   const div32 = 60.25;
-  // Office 1: right triangle, 13'-0" clear on the entry-side wall (o1a–o1b) and 15'-0" clear
-  // on the wall toward Office 2 (o1a–o1c), long side on the 45° wall (contractor markup "13×15"),
-  // its top corner 6" down the 45° wall from the main-entry corner.
-  const o1a = S(51.528, 15.852); // the right-angle corner
-  const o1b = S(52.514, 29.646);
-  const o1c = S(67.445, 14.715);
-  // The aisle under Office 1 is an even 47" clear: Office 3's top wall and Office 2's angled wall
-  // form one straight line parallel to Office 1's bottom wall, pivoting at Office 3/4's corner.
-  const o3R = S(div32, 10.896); // Office 3's top wall at the Office 2 wall (10" lower than corrT)
-  const o2Top = S(72.112, 10.048); // where office 2's angled wall meets the 45° wall
+  // Office 1: right triangle by the main entry, 15'-0" clear up the entry-side wall (which runs
+  // straight up to the main-entry corner E1) and 15'-0" clear along its level bottom wall, with
+  // its long side on the 45° wall. (A right angle against a 45° wall makes both sides equal.)
+  const o1a = S(52.16, 14.112); // the right-angle corner
+  const o1e = S(68.048, 14.112); // where the bottom wall meets the 45° wall
+  // The aisle under Office 1 is an even 47" clear: Office 3's top wall drops to stay level and
+  // 47" below Office 1's bottom wall. Office 2's door sits on the same line; a wall runs from
+  // the door's far jamb up to Office 1's corner on the 45° wall.
+  const o3T = 9.779; // Office 3's top wall (Office 4's stays at corrT)
+  const o2D = S(div32 + 4, o3T); // far jamb of Office 2's door
   // IT / storage room
   const stL = 34.41;
   const stR = 42.45;
@@ -206,13 +206,14 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(S(confR, confT), S(confR, 0), [], 'interior', CONTRACTOR),
     // Offices 2–4 (contractor)
     ...wallFt(S(confR, corrT), S(div43, corrT), [[0.4, 36]], 'interior', CONTRACTOR),
-    ...wallFt(S(div43, corrT), o3R, [[8.69, 36]], 'interior', CONTRACTOR), // Office 3 door 0.3' from the Office 2 wall
+    ...wallFt(S(div32, o3T), S(div43, o3T), [[0.3, 36]], 'interior', CONTRACTOR), // Office 3 top wall + door
     ...wallFt(S(div43, corrT), S(div43, 0), [], 'interior', CONTRACTOR),
-    ...wallFt(o3R, S(div32, 0), [], 'interior', CONTRACTOR),
-    ...wallFt(o3R, o2Top, [[0.5, 36]], 'interior', CONTRACTOR),
-    // Office 1 (contractor) — triangle against the 45° wall
-    ...wallFt(o1a, o1b, [[0.6, 36]], 'interior', CONTRACTOR),
-    ...wallFt(o1a, o1c, [], 'interior', CONTRACTOR),
+    ...wallFt(S(div32, o3T), S(div32, 0), [], 'interior', CONTRACTOR),
+    ...wallFt(S(div32, o3T), o2D, [[0.5, 36]], 'interior', CONTRACTOR), // Office 2 door
+    ...wallFt(o2D, o1e, [], 'interior', CONTRACTOR), // Office 2 wall up to Office 1's corner
+    // Office 1 (contractor) — right triangle by the main entry
+    ...wallFt(o1a, E1, [[0.6, 36]], 'interior', CONTRACTOR),
+    ...wallFt(o1a, o1e, [], 'interior', CONTRACTOR),
   ];
 
   const R = (name: string, type: Room['roomType'], centerFt: Pt[], fill: string, extra: Partial<Room> = {}) =>
@@ -223,14 +224,14 @@ function buildSuite(): SuiteGeometry {
 
   const conference = fixedRoom(R('Conference Room', 'conference', [S(confL, 0), S(confR, 0), S(confR, confT), S(confL, confT)], '#e9eef8'));
   const office4 = fixedRoom(R('Office 4', 'office', [S(confR, 0), S(div43, 0), S(div43, corrT), S(confR, corrT)], '#eef0f6'));
-  const office3 = fixedRoom(R('Office 3', 'office', [S(div43, 0), S(div32, 0), o3R, S(div43, corrT)], '#eef0f6'));
-  const office2 = fixedRoom(R('Office 2', 'office', [S(div32, 0), B, o2Top, o3R], '#eef0f6'));
-  const office1 = fixedRoom(R('Office 1', 'office', [o1a, o1c, o1b], '#eef0f6'));
+  const office3 = fixedRoom(R('Office 3', 'office', [S(div43, 0), S(div32, 0), S(div32, o3T), S(div43, o3T)], '#eef0f6'));
+  const office2 = fixedRoom(R('Office 2', 'office', [S(div32, 0), B, o1e, o2D, S(div32, o3T)], '#eef0f6'));
+  const office1 = fixedRoom(R('Office 1', 'office', [o1a, o1e, E1], '#eef0f6'));
   const storage = R('IT / Storage', 'it', [S(stL, stB), S(stR, stB), S(stR, T_TOP), S(stL, T_TOP)], '#eceff3');
   const open = R(
     'Open Area',
     'open',
-    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, corrT), S(div43, corrT), o3R, o2Top, o1c, o1a, o1b, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, K1, TL],
+    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, corrT), S(div43, corrT), S(div43, o3T), S(div32, o3T), o2D, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, K1, TL],
     '#f5f8f7',
   );
   // Zones inside the open area (no walls of their own). Dimensions are clear floor.
@@ -263,9 +264,9 @@ function buildSuite(): SuiteGeometry {
     doorFt(S(confL, confT), S(confR, confT), 0.75, S(15, 8), 'Conference door 1', 36, CONTRACTOR),
     doorFt(S(confR, confT), S(confL, confT), 0.75, S(34, 8), 'Conference door 2', 36, CONTRACTOR),
     doorFt(S(confR, corrT), S(div43, corrT), 0.4, S(40, 6), 'Office 4 door', 36, CONTRACTOR),
-    doorFt(o3R, S(div43, corrT), 0.3, S(57, 6), 'Office 3 door', 36, CONTRACTOR),
-    doorFt(o3R, o2Top, 0.5, S(66, 6), 'Office 2 door', 36, CONTRACTOR),
-    doorFt(o1a, o1b, 0.6, S(58, 20), 'Office 1 door', 36, CONTRACTOR),
+    doorFt(S(div32, o3T), S(div43, o3T), 0.3, S(57, 5), 'Office 3 door', 36, CONTRACTOR),
+    doorFt(S(div32, o3T), o2D, 0.5, S(62, 5), 'Office 2 door', 36, CONTRACTOR),
+    doorFt(o1a, E1, 0.6, S(56, 20), 'Office 1 door', 36, CONTRACTOR),
   ];
 
   // ---- Existing fixtures shown on the plan (no proposed furniture).
