@@ -168,12 +168,16 @@ function buildSuite(): SuiteGeometry {
   const corrT = 11.75; // office corridor wall
   const div43 = 48.29;
   const div32 = 60.25;
-  const o2Top = S(69.272, 12.888); // where office 2's angled wall meets the 45° wall
   // Office 1: right triangle, 13'-0" clear on the entry-side wall (o1a–o1b) and 15'-0" clear
-  // on the wall toward Office 2 (o1a–o1c), long side on the 45° wall (contractor markup "13×15").
-  const o1a = S(52.695, 14.685); // the right-angle corner
-  const o1b = S(53.68, 28.48);
-  const o1c = S(68.612, 13.548);
+  // on the wall toward Office 2 (o1a–o1c), long side on the 45° wall (contractor markup "13×15"),
+  // its top corner 6" down the 45° wall from the main-entry corner.
+  const o1a = S(51.528, 15.852); // the right-angle corner
+  const o1b = S(52.514, 29.646);
+  const o1c = S(67.445, 14.715);
+  // The aisle under Office 1 is an even 47" clear: Office 3's top wall and Office 2's angled wall
+  // form one straight line parallel to Office 1's bottom wall, pivoting at Office 3/4's corner.
+  const o3R = S(div32, 10.896); // Office 3's top wall at the Office 2 wall (10" lower than corrT)
+  const o2Top = S(72.112, 10.048); // where office 2's angled wall meets the 45° wall
   // IT / storage room
   const stL = 34.41;
   const stR = 42.45;
@@ -193,18 +197,19 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(K1, TL, [], 'exterior'),
     ...wallFt(TL, L, [], 'exterior'),
     // IT / storage room (existing)
-    ...wallFt(S(stL, stB), S(stL, T_TOP), [[0.5, 36]]),
-    ...wallFt(S(stL, stB), S(stR, stB)),
+    ...wallFt(S(stL, stB), S(stL, T_TOP)),
+    ...wallFt(S(stL, stB), S(stR, stB), [[0.5, 36]]), // door in the bottom wall, hinged at the left corner
     ...wallFt(S(stR, stB), S(stR, T_TOP)),
     // Conference room (contractor)
     ...wallFt(S(confL, 0), S(confL, confT), [], 'interior', CONTRACTOR),
     ...wallFt(S(confL, confT), S(confR, confT), [[0.75, 36], [20.67, 36]], 'interior', CONTRACTOR),
     ...wallFt(S(confR, confT), S(confR, 0), [], 'interior', CONTRACTOR),
     // Offices 2–4 (contractor)
-    ...wallFt(S(confR, corrT), S(div32, corrT), [[0.4, 36], [19.99, 36]], 'interior', CONTRACTOR),
+    ...wallFt(S(confR, corrT), S(div43, corrT), [[0.4, 36]], 'interior', CONTRACTOR),
+    ...wallFt(S(div43, corrT), o3R, [[8.69, 36]], 'interior', CONTRACTOR), // Office 3 door 0.3' from the Office 2 wall
     ...wallFt(S(div43, corrT), S(div43, 0), [], 'interior', CONTRACTOR),
-    ...wallFt(S(div32, corrT), S(div32, 0), [], 'interior', CONTRACTOR),
-    ...wallFt(S(div32, corrT), o2Top, [[0.5, 36]], 'interior', CONTRACTOR),
+    ...wallFt(o3R, S(div32, 0), [], 'interior', CONTRACTOR),
+    ...wallFt(o3R, o2Top, [[0.5, 36]], 'interior', CONTRACTOR),
     // Office 1 (contractor) — triangle against the 45° wall
     ...wallFt(o1a, o1b, [[0.6, 36]], 'interior', CONTRACTOR),
     ...wallFt(o1a, o1c, [], 'interior', CONTRACTOR),
@@ -218,14 +223,14 @@ function buildSuite(): SuiteGeometry {
 
   const conference = fixedRoom(R('Conference Room', 'conference', [S(confL, 0), S(confR, 0), S(confR, confT), S(confL, confT)], '#e9eef8'));
   const office4 = fixedRoom(R('Office 4', 'office', [S(confR, 0), S(div43, 0), S(div43, corrT), S(confR, corrT)], '#eef0f6'));
-  const office3 = fixedRoom(R('Office 3', 'office', [S(div43, 0), S(div32, 0), S(div32, corrT), S(div43, corrT)], '#eef0f6'));
-  const office2 = fixedRoom(R('Office 2', 'office', [S(div32, 0), B, o2Top, S(div32, corrT)], '#eef0f6'));
+  const office3 = fixedRoom(R('Office 3', 'office', [S(div43, 0), S(div32, 0), o3R, S(div43, corrT)], '#eef0f6'));
+  const office2 = fixedRoom(R('Office 2', 'office', [S(div32, 0), B, o2Top, o3R], '#eef0f6'));
   const office1 = fixedRoom(R('Office 1', 'office', [o1a, o1c, o1b], '#eef0f6'));
   const storage = R('IT / Storage', 'it', [S(stL, stB), S(stR, stB), S(stR, T_TOP), S(stL, T_TOP)], '#eceff3');
   const open = R(
     'Open Area',
     'open',
-    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, corrT), S(div32, corrT), o2Top, o1c, o1a, o1b, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, K1, TL],
+    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, corrT), S(div43, corrT), o3R, o2Top, o1c, o1a, o1b, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, K1, TL],
     '#f5f8f7',
   );
   // Zones inside the open area (no walls of their own). Dimensions are clear floor.
@@ -254,12 +259,12 @@ function buildSuite(): SuiteGeometry {
     doorFt(E1, S2, 0.48, S(50, 25), 'Main entry (right leaf)'),
     doorFt(S2, E1, 0.48, S(47, 25), 'Main entry (left leaf)'),
     doorFt(N1, K3, 0.74, S(16, 24), 'Suite door (corridor)'),
-    doorFt(S(stL, stB), S(stL, T_TOP), 0.5, S(38, 24), 'IT / Storage door'),
+    doorFt(S(stL, stB), S(stR, stB), 0.5, S(38, 24), 'IT / Storage door'),
     doorFt(S(confL, confT), S(confR, confT), 0.75, S(15, 8), 'Conference door 1', 36, CONTRACTOR),
     doorFt(S(confR, confT), S(confL, confT), 0.75, S(34, 8), 'Conference door 2', 36, CONTRACTOR),
-    doorFt(S(confR, corrT), S(div32, corrT), 0.4, S(40, 6), 'Office 4 door', 36, CONTRACTOR),
-    doorFt(S(div32, corrT), S(confR, corrT), 0.3, S(57, 6), 'Office 3 door', 36, CONTRACTOR),
-    doorFt(S(div32, corrT), o2Top, 0.5, S(66, 8), 'Office 2 door', 36, CONTRACTOR),
+    doorFt(S(confR, corrT), S(div43, corrT), 0.4, S(40, 6), 'Office 4 door', 36, CONTRACTOR),
+    doorFt(o3R, S(div43, corrT), 0.3, S(57, 6), 'Office 3 door', 36, CONTRACTOR),
+    doorFt(o3R, o2Top, 0.5, S(66, 6), 'Office 2 door', 36, CONTRACTOR),
     doorFt(o1a, o1b, 0.6, S(58, 20), 'Office 1 door', 36, CONTRACTOR),
   ];
 
@@ -277,7 +282,7 @@ function buildSuite(): SuiteGeometry {
     { ...hvac(77.3, 4), rotation: 0 },
     fx('storage-cab', 1.9, T_TOP - ext - 1, 'Sink', { width: 24, depth: 24, color: '#e3d5bf' }),
     fx('storage-cab', 6.6, T_TOP - ext - 1.25, 'Refrigerator', { width: 30, depth: 30, color: '#e3d5bf' }),
-    fx('shelving', 39.7, stB + 0.21 + 0.75, 'Shelving', { rotation: 180 }),
+    fx('shelving', 40.0, stB + 0.21 + 0.75, 'Shelving', { rotation: 180 }),
   ];
 
   // ---- Dimension lines for the marked dimensions.

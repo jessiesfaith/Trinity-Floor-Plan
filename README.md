@@ -57,8 +57,8 @@ exactly under the traced walls and marks it calibrated.
 |---|---|---|
 | Conference Room | 24' × 14' clear, on the window wall 12' from the left corner, 2 doors | **Contractor-fixed** |
 | Office 1 | Right triangle on the 45° wall: 13' clear on the entry side × 15' clear toward Office 2 (red markup, "13×15") | **Contractor-fixed** |
-| Office 2 | On the window wall at the far tip, angled wall to the corridor | **Contractor-fixed** |
-| Office 3 | ~12' × 11'-9" on the window wall | **Contractor-fixed** |
+| Office 2 | On the window wall at the far tip; its top wall runs straight on from Office 3's, keeping the aisle under Office 1 an even 47" clear | **Contractor-fixed** |
+| Office 3 | ~11'-6" wide on the window wall, 11'-2" deep at the Office 4 side to 10'-4" at the Office 2 side (top wall parallel to Office 1) | **Contractor-fixed** |
 | Office 4 | ~11' × 11'-9" on the window wall, next to the conference room | **Contractor-fixed** |
 | IT / Storage ("Stor") | ~8' × 10' against the top wall | Existing |
 | Kitchenette | Top-left corner, sink + refrigerator | Existing |
