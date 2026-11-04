@@ -1,14 +1,15 @@
 'use client';
 
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   Columns3, DoorOpen, Download, FileUp, FolderOpen, Grid3x3, Hand, LayoutGrid, Magnet, MousePointer2, MoveDiagonal, PenLine,
-  Presentation, Redo2, Ruler, Save, Settings, Square, Type, Undo2, Wand2, RectangleHorizontal, FilePlus2,
+  Presentation, Redo2, Ruler, Save, Settings, Square, Type, Undo2, Wand2, RectangleHorizontal, FilePlus2, RefreshCw,
 } from 'lucide-react';
 import { usePlanStore, type Tool } from '@/store/usePlanStore';
 import { Button } from './ui/button';
 import { parseProject, ProjectParseError } from '@/lib/persistence';
 import { createBlankProject, createSampleProject } from '@/lib/sampleProject';
+import { floorPlanIsOutdated, updateFloorPlan } from '@/lib/updateFloorPlan';
 
 const TOOLS: { tool: Tool; icon: typeof Hand; label: string; key: string }[] = [
   { tool: 'select', icon: MousePointer2, label: 'Select', key: 'V' },
@@ -26,6 +27,8 @@ export default function Toolbar({ onSave }: { onSave: () => void }) {
   const tool = usePlanStore((s) => s.tool);
   const view = usePlanStore((s) => s.view);
   const canUndo = usePlanStore((s) => s.past.length > 0);
+  const project = usePlanStore((s) => s.project);
+  const planOutdated = useMemo(() => floorPlanIsOutdated(project), [project]);
   const canRedo = usePlanStore((s) => s.future.length > 0);
   const dirty = usePlanStore((s) => s.dirty);
   const savedAt = usePlanStore((s) => s.savedAt);
@@ -82,6 +85,25 @@ export default function Toolbar({ onSave }: { onSave: () => void }) {
       >
         <FilePlus2 />
       </Button>
+      {planOutdated && (
+        <Button
+          variant="toolbar"
+          title="Replace the walls, rooms and doors with the latest floor plan, keeping your cubicles, furniture, aisles and notes"
+          onClick={() => {
+            const n = st().project.scenarios.length;
+            const ok = confirm(
+              `Update to the latest floor plan?
+
+The walls, rooms and doors in all ${n} layouts will be replaced with the current plan. Your cubicles, desks, furniture, aisles and notes stay where they are. Anything that now overlaps a wall will show up under Warnings.
+
+You can undo this with Ctrl+Z.`,
+            );
+            if (ok) st().commit((p) => updateFloorPlan(p).project);
+          }}
+        >
+          <RefreshCw /> <span className="hidden xl:inline">Update floor plan</span>
+        </Button>
+      )}
       <div className="mx-1 h-6 w-px bg-white/20" />
       <Button variant="toolbar" size="icon" disabled={!canUndo} onClick={() => st().undo()} title="Undo (Ctrl+Z)">
         <Undo2 />
