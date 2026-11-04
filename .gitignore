@@ -6,3 +6,7 @@ next-env.d.ts
 *.tsbuildinfo
 .env*.local
 .DS_Store
+
+# Local-only reference files (e.g. Floor_Plan.pdf). Never committed: repo is public.
+/reference/*
+!/reference/README.md
