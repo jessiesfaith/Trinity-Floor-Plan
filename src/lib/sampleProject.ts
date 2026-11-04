@@ -205,7 +205,8 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(K3, K2, [], 'exterior'),
     ...wallFt(K2, K1, [], 'exterior'),
     ...wallFt(K1, TL, [], 'exterior'),
-    ...wallFt(TL, L, [], 'exterior'),
+    ...wallFt(TL, S(0, kB), [], 'exterior'), // left wall beside the kitchenette
+    ...wallFt(S(0, kB), L, [], 'exterior'), // left wall beside Cubicle Area B (22' clear)
     // IT / storage room (existing)
     ...wallFt(S(stL, stB), S(stL, T_TOP_A)),
     ...wallFt(S(stL, stB), S(stR, stB), [[0.5, 36]]), // door in the bottom wall, hinged at the left corner

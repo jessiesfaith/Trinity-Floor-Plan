@@ -17,6 +17,7 @@ import type { ValidationResult } from '@/lib/validation';
 import { drawFurniture } from './drawFurniture';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize, Minus, Plus, RotateCcw, RotateCw } from 'lucide-react';
 import { faceObjects, facingOf, rotateObjects, type Facing } from '@/lib/orientation';
+import { wallInsideLength } from '@/lib/wallLength';
 
 const TEAL = '#0f9d9a';
 const RED = '#d62828';
@@ -589,6 +590,11 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
   const visibleLayer = (id: LayerId) => layerOf(id).visible;
   const rooms = objects.filter((o): o is Room => o.kind === 'room');
   const walls = objects.filter((o): o is Wall => o.kind === 'wall');
+  // Wall labels show inside (clear) lengths: center line minus the walls met at each end.
+  const wallInside = useMemo(() => {
+    const ws = objects.filter((o): o is Wall => o.kind === 'wall');
+    return new Map(ws.map((w) => [w.id, wallInsideLength(w, ws)]));
+  }, [objects]);
   const doors = objects.filter((o): o is Door => o.kind === 'door');
   const furniture = objects.filter((o): o is Furniture => o.kind === 'furniture');
   const labels = objects.filter((o): o is TextLabel => o.kind === 'label');
@@ -1076,7 +1082,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
                 const n = rotatePt({ x: 0, y: -1 }, ang);
                 const pos = add(m, vscale(n, w.thickness / 2 + fs * 0.4));
                 return (
-                  <Text key={`wl-${w.id}`} x={pos.x} y={pos.y} rotation={ang} offsetX={60 * px} offsetY={fs} width={120 * px} align="center" text={fmt(dist(w.a, w.b))} fontSize={fs} fill={sel ? RED : '#c04848'} fontStyle={sel ? 'bold' : 'normal'} listening={false} />
+                  <Text key={`wl-${w.id}`} x={pos.x} y={pos.y} rotation={ang} offsetX={60 * px} offsetY={fs} width={120 * px} align="center" text={fmt(wallInside.get(w.id) ?? dist(w.a, w.b))} fontSize={fs} fill={sel ? RED : '#c04848'} fontStyle={sel ? 'bold' : 'normal'} listening={false} />
                 );
               })}
 
