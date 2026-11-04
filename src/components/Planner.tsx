@@ -11,6 +11,7 @@ import { AUTOSAVE_KEY, MANUAL_KEY, idbGet, idbSet, parseProject } from '@/lib/pe
 import { createSampleProject } from '@/lib/sampleProject';
 import { isOutdatedUneditedSample } from '@/lib/sampleFingerprint';
 import { rotateObjects } from '@/lib/orientation';
+import { BUILD_ID, isStaleAssetError, liveBuild, reloadOnce } from '@/lib/freshVersion';
 import Toolbar from './Toolbar';
 import LeftSidebar from './LeftSidebar';
 import PropertiesPanel from './PropertiesPanel';
@@ -31,6 +32,9 @@ export default function Planner() {
   const selectedIds = usePlanStore((s) => s.selectedIds);
   const [ready, setReady] = useState(false);
   const [rightTab, setRightTab] = useState('properties');
+  // On narrow screens (below 1024px) the side panels fold away and open over the plan.
+  const [leftOpen, setLeftOpen] = useState(false);
+  const [rightOpen, setRightOpen] = useState(false);
   const viewCenter = useRef<() => Pt>(() => ({ x: 0, y: 0 }));
   const st = usePlanStore.getState;
 
@@ -58,6 +62,36 @@ export default function Planner() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ---- Stay on the newest deployment: when the tab comes back into view, reload into a newer
+  // build if one is live (saving the plan first). A missing script file also triggers one reload.
+  useEffect(() => {
+    if (BUILD_ID === 'dev') return;
+    let busy = false;
+    const check = async () => {
+      if (busy || document.visibilityState !== 'visible') return;
+      busy = true;
+      const live = await liveBuild();
+      if (live && live !== BUILD_ID) {
+        if (st().dirty) await idbSet(AUTOSAVE_KEY, JSON.stringify(st().project)).catch(() => undefined);
+        if (reloadOnce(live)) return;
+      }
+      busy = false;
+    };
+    const onError = (e: ErrorEvent | PromiseRejectionEvent) => {
+      if (isStaleAssetError('reason' in e ? e.reason : e.error ?? e.message)) reloadOnce('stale-assets');
+    };
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('focus', check);
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onError);
+    return () => {
+      document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('focus', check);
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onError);
+    };
+  }, [st]);
 
   // ---- Autosave (debounced, IndexedDB).
   useEffect(() => {
@@ -173,12 +207,15 @@ export default function Planner() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <Toolbar onSave={save} />
-      <div className="flex min-h-0 flex-1">
-        <aside className="w-72 shrink-0 border-r border-slate-200 bg-white">
+      <div className="relative flex min-h-0 flex-1">
+        <aside className={`${leftOpen ? 'absolute inset-y-0 left-0 z-30 block max-w-[85vw] shadow-xl' : 'hidden'} w-72 shrink-0 border-r border-slate-200 bg-white lg:static lg:block lg:shadow-none`}>
           <LeftSidebar onAddTemplate={(t) => place(t)} />
         </aside>
         <main className="relative min-w-0 flex-1">
-          <div className="absolute left-0 right-0 top-0 z-10 flex items-center gap-2 border-b border-slate-200 bg-white/90 px-3 py-1 text-xs backdrop-blur">
+          <div className="absolute left-0 right-0 top-0 z-10 flex items-center gap-2 overflow-x-auto whitespace-nowrap border-b border-slate-200 bg-white/90 px-3 py-1 text-xs backdrop-blur">
+            <button className="rounded border border-slate-300 px-1.5 lg:hidden" onClick={() => { setLeftOpen((o) => !o); setRightOpen(false); }}>
+              {leftOpen ? 'Close' : 'Library'}
+            </button>
             <span className="font-semibold text-navy">{scenario.name}</span>
             <span className="text-slate-400">r{scenario.revision}</span>
             <span className="text-slate-300">|</span>
@@ -190,12 +227,15 @@ export default function Planner() {
             <button className="ml-auto text-slate-500 underline-offset-2 hover:text-navy hover:underline" onClick={() => setRightTab('warnings')}>
               Review warnings
             </button>
+            <button className="rounded border border-slate-300 px-1.5 lg:hidden" onClick={() => { setRightOpen((o) => !o); setLeftOpen(false); }}>
+              {rightOpen ? 'Close' : 'Details'}
+            </button>
           </div>
           <div className="absolute inset-0 top-7">
             <PlanCanvas validation={validation} onDropTemplate={onDropTemplate} registerViewCenter={(fn) => (viewCenter.current = fn)} />
           </div>
         </main>
-        <aside className="flex w-80 shrink-0 flex-col border-l border-slate-200 bg-white">
+        <aside className={`${rightOpen ? 'absolute inset-y-0 right-0 z-30 flex max-w-[85vw] shadow-xl' : 'hidden'} w-80 shrink-0 flex-col border-l border-slate-200 bg-white lg:static lg:flex lg:shadow-none`}>
           <Tabs value={rightTab} onValueChange={setRightTab} className="flex h-full min-h-0 flex-col">
             <TabsList>
               <TabsTrigger value="properties">Properties</TabsTrigger>

@@ -82,9 +82,11 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setSize({ w: el.clientWidth, h: el.clientHeight }));
+    // Never 0 x 0: Konva throws when it draws a zero-sized canvas (e.g. a narrow phone screen).
+    const measure = () => setSize({ w: Math.max(1, el.clientWidth), h: Math.max(1, el.clientHeight) });
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    setSize({ w: el.clientWidth, h: el.clientHeight });
+    measure();
     return () => ro.disconnect();
   }, []);
 
@@ -284,6 +286,42 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
     if (tool === 'aisle') {
       setMarquee({ a: snapPoint(p, { geometry: false }), b: snapPoint(p, { geometry: false }) });
     }
+  };
+
+  // ---- Touch: one finger drags the view (unless it grabs something draggable), two fingers pinch-zoom.
+  const pinch = useRef<{ d: number; k: number } | null>(null);
+  const touchPair = (t: TouchList) => {
+    const rect = stageRef.current!.container().getBoundingClientRect();
+    const a = { x: t[0].clientX - rect.left, y: t[0].clientY - rect.top };
+    const b = { x: t[1].clientX - rect.left, y: t[1].clientY - rect.top };
+    return { d: dist(a, b), c: vscale(add(a, b), 0.5) };
+  };
+  const onTouchStart = (e: KonvaEventObject<TouchEvent>) => {
+    const t = e.evt.touches;
+    if (t.length === 2) {
+      panStart.current = null;
+      pinch.current = { d: touchPair(t).d, k: view.k };
+    } else if (t.length === 1 && (tool === 'select' || tool === 'pan') && !grabsDrag(e.target)) {
+      if (isBackground(e as unknown as KonvaEventObject<MouseEvent>)) store.getState().select([]);
+      panStart.current = { x: t[0].clientX, y: t[0].clientY, vx: view.x, vy: view.y };
+    }
+  };
+  const onTouchMove = (e: KonvaEventObject<TouchEvent>) => {
+    const t = e.evt.touches;
+    if (pinch.current && t.length === 2) {
+      e.evt.preventDefault();
+      const { d, c } = touchPair(t);
+      const target = Math.min(40, Math.max(0.05, pinch.current.k * (d / Math.max(1, pinch.current.d))));
+      zoomBy(target / view.k, c);
+    } else if (panStart.current && t.length === 1) {
+      e.evt.preventDefault();
+      const s = panStart.current;
+      setViewState((v) => ({ ...v, x: s.vx + (t[0].clientX - s.x), y: s.vy + (t[0].clientY - s.y) }));
+    }
+  };
+  const onTouchEnd = (e: KonvaEventObject<TouchEvent>) => {
+    if (e.evt.touches.length < 2) pinch.current = null;
+    if (e.evt.touches.length === 0) panStart.current = null;
   };
 
   const onMouseMove = () => {
@@ -651,7 +689,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
     <div
       ref={wrapRef}
       className="relative h-full w-full overflow-hidden bg-white"
-      style={{ cursor: cursorStyle }}
+      style={{ cursor: cursorStyle, touchAction: 'none' }}
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes('application/x-fp-template')) e.preventDefault();
       }}
@@ -676,6 +714,9 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         onClick={onClick}
         onDblClick={onDblClick}
         onContextMenu={(e) => e.evt.preventDefault()}
@@ -829,6 +870,11 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
                     if (tool !== 'select') return;
                     e.cancelBubble = true;
                     if (!selected.has(f.id)) store.getState().select([f.id], e.evt.shiftKey);
+                  }}
+                  onTouchStart={(e) => {
+                    if (tool !== 'select') return;
+                    e.cancelBubble = true;
+                    if (!selected.has(f.id)) store.getState().select([f.id]);
                   }}
                 >
                   <Shape
@@ -1202,7 +1248,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
       </div>
 
       {/* Status / hints */}
-      <div className="pointer-events-none absolute bottom-3 left-3 z-10 rounded bg-navy/85 px-2 py-1 text-[11px] text-white shadow">
+      <div className="pointer-events-none absolute bottom-3 left-3 z-10 hidden rounded bg-navy/85 sm:block px-2 py-1 text-[11px] text-white shadow">
         {cursor ? `${fmt(cursor.x)}, ${fmt(cursor.y)}` : '—'} · {TOOL_HINT[tool]}
       </div>
       {/* Turn bar for the selected cubicles / desks */}

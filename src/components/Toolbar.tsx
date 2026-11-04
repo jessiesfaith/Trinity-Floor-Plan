@@ -38,7 +38,7 @@ export default function Toolbar({ onSave }: { onSave: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-1 bg-navy px-2 text-white">
+    <header className="flex h-12 shrink-0 items-center gap-1 overflow-x-auto bg-navy px-2 text-white [&>*]:shrink-0">
       <div className="mr-2 flex items-center gap-2 pr-2">
         <LayoutGrid className="h-5 w-5 text-teal" />
         <input
