@@ -1,6 +1,7 @@
 // Canvas-2D furniture symbols (Konva sceneFunc). Mirrors lib/svgRender.ts
 // furnitureSymbol() so the editor, presentation view and exports agree.
 
+import { cubeWallColor } from '@/lib/cubicleParts';
 import type { Furniture } from '@/types/plan';
 
 type Ctx = CanvasRenderingContext2D;
@@ -171,7 +172,8 @@ export function drawFurniture(ctx: Ctx, f: Furniture, pres: boolean, stroke: str
       ctx.stroke();
       break;
     case 'partition':
-      ctx.fillStyle = stroke;
+      // Cube walls: long ones blue, short ones amber (teal while selected).
+      ctx.fillStyle = stroke === '#0f9d9a' ? stroke : (cubeWallColor(f) ?? stroke);
       ctx.fillRect(-hw, -hd, w, d);
       break;
     case 'phone-booth': {

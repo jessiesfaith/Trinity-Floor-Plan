@@ -1,10 +1,9 @@
-// Break whole cubicles into the parts the office actually owns (4' and 2' cubicle walls, corner /
-// long / short desks, hanging shelves, file cabinets), so a layout can be checked and adjusted
-// against the furniture inventory piece by piece.
+// Break whole cubicles into the cube walls the office actually owns (4' and 2' pieces), so a
+// layout can be checked and adjusted against the inventory wall by wall.
 //
 // Cubicle walls are laid along each cubicle's back and both sides (the front stays open). A wall
 // shared by two cubicles is laid once, and no cubicle wall is laid where a building wall already
-// stands. Desks form an L along the back and the left side, as cubicles are drawn.
+// stands.
 
 import type { Furniture, InventoryItem, PlanObject, Pt, Wall } from '@/types/plan';
 import { BUILT_IN_TEMPLATES } from './library';
@@ -14,13 +13,19 @@ const tpl = (id: string) => BUILT_IN_TEMPLATES.find((t) => t.id === id)!;
 export const PART = {
   wall4: tpl('part-wall-4'),
   wall2: tpl('part-wall-2'),
-  corner: tpl('part-desk-corner'),
-  long: tpl('part-desk-long'),
-  short: tpl('part-desk-short'),
-  shelf: tpl('part-shelf'),
-  fileSmall: tpl('part-file-small'),
-  fileLong: tpl('part-file-long'),
 };
+
+export const LONG_WALL = 'Cubicles|Long cubicle walls';
+export const SHORT_WALL = 'Cubicles|Short cubicle walls';
+export const LONG_WALL_COLOR = '#2563eb';
+export const SHORT_WALL_COLOR = '#d97706';
+
+/** Drawing colour of a cube wall piece (by its inventory line, so older saved pieces recolour too). */
+export function cubeWallColor(o: { inventoryItem?: string; width: number }): string | null {
+  if (o.inventoryItem === LONG_WALL) return LONG_WALL_COLOR;
+  if (o.inventoryItem === SHORT_WALL) return SHORT_WALL_COLOR;
+  return null;
+}
 
 /** Inventory key of an item, as used by templates and placed parts. */
 export const inventoryKey = (it: Pick<InventoryItem, 'area' | 'item'>) => `${it.area.trim()}|${it.item.trim()}`;
@@ -152,91 +157,28 @@ export interface PartsResult {
   used: Map<string, number>;
 }
 
-/**
- * Replace every cubicle in `objects` with its parts. Desks follow the stock on hand: corner desks
- * first (4' x 4' cubicles get them first), then two long desks, then short desks; 6' sides are
- * filled out with short desks. One hanging shelf and one file cabinet per cubicle while they last.
- */
-export function explodeCubicles(objects: PlanObject[], inventory: InventoryItem[] = [], opts: { furniture?: boolean } = {}): PartsResult {
+/** Replace every cubicle in `objects` with its cube walls (4' and 2' pieces). */
+export function explodeCubicles(objects: PlanObject[]): PartsResult {
   const cubicles = objects.filter((o): o is Furniture => o.kind === 'furniture' && o.type === 'cubicle');
   const walls = objects.filter((o): o is Wall => o.kind === 'wall');
-  const owned = new Map(inventory.map((x) => [inventoryKey(x), x.qty ?? 0]));
-  const stock = (t: { inventoryItem?: string }) => owned.get(t.inventoryItem!) ?? 0;
-  const left = new Map<string, number>([PART.corner, PART.long, PART.short, PART.shelf, PART.fileSmall, PART.fileLong].map((t) => [t.inventoryItem!, stock(t)]));
-  const take = (t: { inventoryItem?: string }) => {
-    const n = left.get(t.inventoryItem!) ?? 0;
-    if (n <= 0) return false;
-    left.set(t.inventoryItem!, n - 1);
-    return true;
-  };
-
   const parts: Furniture[] = [];
-  const place = (t: typeof PART.wall4, f: Furniture | null, p: Pt, rotation: number, name: string) => {
-    const w = f ? toWorld(f, p) : p;
-    parts.push({ ...furnitureFromTemplate(t, w.x, w.y, name, ((rotation % 360) + 360) % 360), department: f?.department ?? '' });
-  };
-
-  // Walls
   let n4 = 0;
   let n2 = 0;
   for (const s of cubicleWallRuns(cubicles, walls)) {
     const L = Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y);
     const d = { x: (s.b.x - s.a.x) / L, y: (s.b.y - s.a.y) / L };
-    const ang = (Math.atan2(d.y, d.x) * 180) / Math.PI;
+    const ang = (((Math.atan2(d.y, d.x) * 180) / Math.PI) % 360 + 360) % 360;
     let t = 0;
     for (const len of panelsFor(L)) {
       const c = { x: s.a.x + d.x * (t + len / 2), y: s.a.y + d.y * (t + len / 2) };
-      if (len === 48) place(PART.wall4, null, c, ang, `Cubicle wall 4' ${String(++n4).padStart(2, '0')}`);
-      else place(PART.wall2, null, c, ang, `Cubicle wall 2' ${String(++n2).padStart(2, '0')}`);
+      parts.push(
+        len === 48
+          ? furnitureFromTemplate(PART.wall4, c.x, c.y, `Long cube wall ${String(++n4).padStart(2, '0')}`, ang)
+          : furnitureFromTemplate(PART.wall2, c.x, c.y, `Short cube wall ${String(++n2).padStart(2, '0')}`, ang),
+      );
       t += len;
     }
   }
-
-  // Desks, shelves, cabinets (4' x 4' cubicles first: a corner desk fits them exactly).
-  const order = opts.furniture === false ? [] : [...cubicles].sort((a, b) => a.width * a.depth - b.width * b.depth);
-  for (const f of order) {
-    const hw = f.width / 2;
-    const hd = f.depth / 2;
-    const r = f.rotation;
-    const label = (what: string) => `${f.name} ${what}`;
-    let backDone: number; // how far along the back (from the left) the desk reaches
-    let sideDone: number; // how far down the left side (from the back) the desk reaches
-    if (take(PART.corner)) {
-      place(PART.corner, f, { x: -hw + 24, y: -hd + 24 }, r, label('corner desk'));
-      backDone = 48;
-      sideDone = 48;
-    } else if (take(PART.long)) {
-      // Two long desks make the L: one along the longer side, one across the other.
-      if (f.depth >= 72 || f.width < 72) {
-        place(PART.long, f, { x: -hw + 24, y: -hd + 12 }, r, label('long desk'));
-        backDone = 48;
-        sideDone = 24;
-        if (f.depth >= 72 && take(PART.long)) {
-          place(PART.long, f, { x: -hw + 12, y: -hd + 48 }, r + 90, label('long desk (side)'));
-          sideDone = 72;
-        }
-      } else {
-        place(PART.long, f, { x: -hw + 12, y: -hd + 24 }, r + 90, label('long desk (side)'));
-        backDone = 24;
-        sideDone = 48;
-        if (take(PART.long)) {
-          place(PART.long, f, { x: -hw + 48, y: -hd + 12 }, r, label('long desk'));
-          backDone = 72;
-        }
-      }
-    } else {
-      backDone = 0;
-      sideDone = 24;
-    }
-    // Fill out the back and the left side with short desks.
-    for (let x = backDone; x + 24 <= f.width + 0.5; x += 24) place(PART.short, f, { x: -hw + x + 12, y: -hd + 12 }, r, label('short desk'));
-    for (let y = sideDone; y + 24 <= f.depth + 0.5; y += 24) place(PART.short, f, { x: -hw + 12, y: -hd + y + 12 }, r, label('short desk'));
-    for (const p of parts.filter((q) => q.name === label('short desk'))) if (!take(PART.short)) p.notes = 'More short desks than in the inventory';
-    if (take(PART.shelf)) place(PART.shelf, f, { x: -hw + 24, y: -hd + 6 }, r, label('hanging shelf'));
-    if (take(PART.fileSmall)) place(PART.fileSmall, f, { x: -hw + 40, y: -hd + 11 }, r, label('file cabinet'));
-    else if (take(PART.fileLong)) place(PART.fileLong, f, { x: -hw + 32, y: -hd + 11 }, r, label('file cabinet'));
-  }
-
   const ids = new Set(cubicles.map((c) => c.id));
   const kept = objects.filter((o) => !ids.has(o.id));
   return { objects: [...kept, ...parts], cubicles: cubicles.length, used: usedByItem(parts) };

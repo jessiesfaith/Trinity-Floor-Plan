@@ -11,6 +11,8 @@ import { AUTOSAVE_KEY, MANUAL_KEY, idbGet, idbSet, parseProject } from '@/lib/pe
 import { createSampleProject } from '@/lib/sampleProject';
 import { isOutdatedUneditedSample } from '@/lib/sampleFingerprint';
 import { rotateObjects } from '@/lib/orientation';
+import { inventoryKey, LONG_WALL, LONG_WALL_COLOR, SHORT_WALL, SHORT_WALL_COLOR } from '@/lib/cubicleParts';
+import { isWallsLayout, openCubicleWalls, openFloorPlan } from '@/lib/wallsLayout';
 import { BUILD_ID, isStaleAssetError, liveBuild, reloadOnce } from '@/lib/freshVersion';
 import Toolbar from './Toolbar';
 import LeftSidebar from './LeftSidebar';
@@ -31,7 +33,6 @@ export default function Planner() {
   const project = usePlanStore((s) => s.project);
   const dirty = usePlanStore((s) => s.dirty);
   const selectedIds = usePlanStore((s) => s.selectedIds);
-  const focusRoom = usePlanStore((s) => s.focusRoom);
   const [ready, setReady] = useState(false);
   const [rightTab, setRightTab] = useState('properties');
   // On narrow screens (below 1024px) the side panels fold away and open over the plan.
@@ -113,6 +114,9 @@ export default function Planner() {
 
   // ---- Validation + capacity (deferred so dragging stays smooth).
   const scenario = activeScenario(project);
+  const inWalls = isWallsLayout(scenario);
+  const wallCount = (key: string) => scenario.objects.filter((o) => o.kind === 'furniture' && o.inventoryItem === key).length;
+  const owned = (key: string) => project.inventory?.find((x) => inventoryKey(x) === key)?.qty;
   const deferredObjects = useDeferredValue(scenario.objects);
   const validation = useMemo(() => validate(deferredObjects, project.settings, { background: project.background }), [deferredObjects, project.settings, project.background]);
   const capacity = useMemo(() => computeCapacity(deferredObjects, validation, project.settings), [deferredObjects, validation, project.settings]);
@@ -218,20 +222,34 @@ export default function Planner() {
             <button className="rounded border border-slate-300 px-1.5 lg:hidden" onClick={() => { setLeftOpen((o) => !o); setRightOpen(false); }}>
               {leftOpen ? 'Close' : 'Library'}
             </button>
-            {/* View tabs: the whole plan, or zoom in on one cubicle area */}
+            {/* Tabs: the floor plan, or the cubicle walls of Area A and Area B */}
             <div className="flex overflow-hidden rounded border border-slate-300" role="tablist" aria-label="View">
-              {[null, ...scenario.objects.filter((o) => o.kind === 'room' && o.roomType === 'cubicle-area').map((o) => o.name)].map((n) => (
+              {(['plan', 'walls'] as const).map((t) => (
                 <button
-                  key={n ?? 'all'}
+                  key={t}
                   role="tab"
-                  aria-selected={focusRoom === n}
-                  className={`px-2 py-0.5 ${focusRoom === n ? 'bg-navy text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-                  onClick={() => st().setFocusRoom(n)}
+                  aria-selected={(t === 'walls') === inWalls}
+                  className={`px-2 py-0.5 ${(t === 'walls') === inWalls ? 'bg-navy text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                  onClick={() => {
+                    if ((t === 'walls') === inWalls) return;
+                    st().commit((p) => (t === 'walls' ? openCubicleWalls(p) : openFloorPlan(p)));
+                    st().select([]);
+                  }}
                 >
-                  {n ?? 'Whole plan'}
+                  {t === 'plan' ? 'Floor plan' : 'Cubicle walls'}
                 </button>
               ))}
             </div>
+            {inWalls && (
+              <span className="flex items-center gap-2 font-semibold">
+                <span className="flex items-center gap-1" style={{ color: LONG_WALL_COLOR }}>
+                  <span className="inline-block h-1 w-4 rounded" style={{ background: LONG_WALL_COLOR }} /> Long walls {wallCount(LONG_WALL)}/{owned(LONG_WALL) ?? '?'}
+                </span>
+                <span className="flex items-center gap-1" style={{ color: SHORT_WALL_COLOR }}>
+                  <span className="inline-block h-1 w-2.5 rounded" style={{ background: SHORT_WALL_COLOR }} /> Short walls {wallCount(SHORT_WALL)}/{owned(SHORT_WALL) ?? '?'}
+                </span>
+              </span>
+            )}
             <span className="font-semibold text-navy">{scenario.name}</span>
             <span className="text-slate-400">r{scenario.revision}</span>
             <span className="text-slate-300">|</span>

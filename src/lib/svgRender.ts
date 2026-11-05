@@ -7,6 +7,7 @@ import { bbox, centroid, rotatePt, add, sub, len, norm, perp, scale } from './ge
 import { doorLatch, footprint, pointsOf, roomArea, roomAt, wallPolygon } from './objects';
 import { formatArea, formatLength } from './units';
 import { groupInventory } from './inventory';
+import { cubeWallColor } from './cubicleParts';
 
 export interface SvgOptions {
   view: '2d' | 'presentation';
@@ -118,9 +119,11 @@ export function furnitureSymbol(f: Furniture, view: '2d' | 'presentation', strok
     case 'shelving':
       parts.push(`<rect x="${-hw}" y="${-hd}" width="${w}" height="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/><line x1="${-hw}" y1="${-hd}" x2="${hw}" y2="${hd}" stroke="${stroke}" stroke-width="0.4"/><line x1="${hw}" y1="${-hd}" x2="${-hw}" y2="${hd}" stroke="${stroke}" stroke-width="0.4"/>`);
       break;
-    case 'partition':
-      parts.push(`<rect x="${-hw}" y="${-hd}" width="${w}" height="${d}" fill="${stroke}" stroke="${stroke}" stroke-width="0.5"/>`);
+    case 'partition': {
+      const c = cubeWallColor(f) ?? stroke;
+      parts.push(`<rect x="${-hw}" y="${-hd}" width="${w}" height="${d}" fill="${c}" stroke="${c}" stroke-width="0.5"/>`);
       break;
+    }
     default:
       parts.push(`<rect x="${-hw}" y="${-hd}" width="${w}" height="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`);
       if (f.isWorkstation && view === 'presentation') parts.push(chair(0, hd + 10, 0));

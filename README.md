@@ -40,15 +40,15 @@ See [FAST_DEV.md](FAST_DEV.md) for the low-CPU workflow, caching and CI.
 | **Views** | 2D architectural (dimensioned, grid, red annotations) and Presentation (furnished, filled rooms) — same data. |
 | **Save / export** | Autosave + manual save (IndexedDB), editable `.json` project import/export (optionally embedding the PDF), high-res PNG, SVG, PDF with title block/legend/areas/seat counts/version/date, print-to-scale (1/8", 3/16", 1/4", 1/2" = 1'-0") with scale bar once calibrated. |
 
-## Cubicle parts and the inventory
+## Cubicle walls tab and the inventory
 
-The **Furniture inventory** card lists what the office owns. **Break cubicles into parts** copies
-the current layout into a new layout tab with every cubicle replaced by the pieces it is built from:
-4' and 2' cubicle walls (laid once where two cubicles share a side, and left out where a building
-wall already stands), corner / long / short desks, a hanging shelf and a file cabinet, following
-the stock on hand. The parts are also in the library under **Cubicle parts**, so walls and desks
-can be moved, added or removed one by one. Each inventory row shows *placed / owned* for the open
-layout, in red when more are placed than owned.
+The tabs above the plan switch between **Floor plan** (whole cubicles, as laid out) and
+**Cubicle walls**: a layout of its own where the floor plan's cubicles become loose cube walls -
+long 4' walls in blue, short 2' walls in amber - laid once where two cubicles share a side and
+left out where a building wall already stands. Only Area A and Area B are shown, as two sections.
+Walls can be moved, turned, deleted or added from **Library -> Cube walls**; the bar shows
+*placed / owned* for long and short walls, and **Lay walls out again from the floor plan** (in the
+inventory card) starts the walls over. The **Furniture inventory** card lists what the office owns.
 
 ## The starter layout (traced from Floor_Plan.pdf)
 

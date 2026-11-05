@@ -18,6 +18,7 @@ import { drawFurniture } from './drawFurniture';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize, Minus, Plus, RotateCcw, RotateCw } from 'lucide-react';
 import { faceObjects, facingOf, rotateObjects, type Facing } from '@/lib/orientation';
 import { wallInsideLength, wallRuns } from '@/lib/wallLength';
+import { isWallsLayout } from '@/lib/wallsLayout';
 
 const TEAL = '#0f9d9a';
 const RED = '#d62828';
@@ -68,7 +69,6 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
   const tool = usePlanStore((s) => s.tool);
   const viewMode = usePlanStore((s) => s.view);
   const fitNonce = usePlanStore((s) => s.fitNonce);
-  const focusName = usePlanStore((s) => s.focusRoom);
   const store = usePlanStore;
 
   const scenario = activeScenario(project);
@@ -92,15 +92,35 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
     return () => ro.disconnect();
   }, []);
 
-  // Area view: only the chosen room (plus a margin for its walls and dimension lines) is drawn.
-  const focusRoom = focusName ? objects.find((o): o is Room => o.kind === 'room' && o.name === focusName) : undefined;
+  // Cubicle walls tab: only the cubicle areas (plus a margin for their walls and dimension lines)
+  // are drawn, as separate sections; the rest of the office is hidden.
   const FOCUS_PAD = 66;
+  const focusBoxes = useMemo(() => {
+    if (!isWallsLayout(scenario)) return null;
+    const areas = objects.filter((o): o is Room => o.kind === 'room' && o.roomType === 'cubicle-area');
+    if (!areas.length) return null;
+    return areas.map((r) => {
+      const b = bbox(r.points);
+      return { minX: b.minX - FOCUS_PAD, minY: b.minY - FOCUS_PAD, maxX: b.maxX + FOCUS_PAD, maxY: b.maxY + FOCUS_PAD };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenario.id, scenario.purpose, scenario.name, objects]);
   const focusBox = useMemo(() => {
-    if (!focusRoom) return null;
-    const b = bbox(focusRoom.points);
-    return { minX: b.minX - FOCUS_PAD, minY: b.minY - FOCUS_PAD, maxX: b.maxX + FOCUS_PAD, maxY: b.maxY + FOCUS_PAD, width: b.width + 2 * FOCUS_PAD, height: b.height + 2 * FOCUS_PAD };
-  }, [focusRoom]);
-  const clip = focusBox ? { clipX: focusBox.minX, clipY: focusBox.minY, clipWidth: focusBox.width, clipHeight: focusBox.height } : {};
+    if (!focusBoxes) return null;
+    const minX = Math.min(...focusBoxes.map((b) => b.minX));
+    const minY = Math.min(...focusBoxes.map((b) => b.minY));
+    const maxX = Math.max(...focusBoxes.map((b) => b.maxX));
+    const maxY = Math.max(...focusBoxes.map((b) => b.maxY));
+    return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(focusBoxes)]);
+  const clip = focusBoxes
+    ? {
+        clipFunc: (ctx: { rect: (x: number, y: number, w: number, h: number) => void }) => {
+          for (const b of focusBoxes) ctx.rect(b.minX, b.minY, b.maxX - b.minX, b.maxY - b.minY);
+        },
+      }
+    : {};
 
   const fit = useCallback(() => {
     const b = focusBox ?? contentBounds(objects, bg?.visible ? bg : undefined);
@@ -109,6 +129,12 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
     setViewState({ k, x: pad - b.minX * k + (size.w - pad * 2 - b.width * k) / 2, y: pad - b.minY * k + (size.h - pad * 2 - b.height * k) / 2 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size.w, size.h, scenario.id, bg?.imageDataUrl, focusBox]);
+
+  // Re-fit when switching between the floor plan and the Cubicle walls tab.
+  useEffect(() => {
+    if (size.w > 100) fit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenario.id]);
 
   useEffect(() => {
     if (size.w > 100) fit();

@@ -223,6 +223,10 @@ export interface Scenario {
   name: string;
   description: string;
   objects: PlanObject[];
+  /** 'cubicle-walls': the Cubicle walls tab's layout (cubicles as loose cube walls). */
+  purpose?: 'cubicle-walls';
+  /** For the walls layout: the floor plan layout it was made from. */
+  sourceId?: string;
   revision: number;
   createdAt: string;
   updatedAt: string;
@@ -246,7 +250,7 @@ export interface PlanSettings {
 export interface FurnitureTemplate {
   id: string;
   label: string;
-  category: 'Workstations' | 'Cubicle parts' | 'Seating' | 'Tables' | 'Storage' | 'Equipment' | 'Architecture' | 'Decor' | 'Custom';
+  category: 'Workstations' | 'Cube walls' | 'Seating' | 'Tables' | 'Storage' | 'Equipment' | 'Architecture' | 'Decor' | 'Custom';
   type: FurnitureType;
   width: number;
   depth: number;

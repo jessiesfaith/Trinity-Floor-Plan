@@ -60,7 +60,7 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
   });
 
   it('cubicle areas match the marked 12 x 16 and 12 x 22 dimensions', () => {
-    expect(roomArea(room('Area A')) / 144).toBeCloseTo(192, 1);
+    expect(roomArea(room('Area A')) / 144).toBeCloseTo(16 * (14 + 8 / 12), 1); // 16' x 14'-8", walkway to the top wall
     expect(roomArea(room('Area B')) / 144).toBeCloseTo(264, 1);
   });
 

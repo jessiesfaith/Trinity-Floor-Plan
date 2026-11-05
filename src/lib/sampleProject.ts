@@ -266,13 +266,14 @@ function buildSuite(): SuiteGeometry {
     '#f5f8f7',
   );
   // Zones inside the open area (no walls of their own). Dimensions are clear floor.
-  // Area A: 16' along the top wall from the inside face of the A1–N1 wall to IT / Storage, 12' deep,
-  // starting right after the 5'-0" walkway above the conference room (2'-8" is left behind it).
+  // Area A: 16' along the top wall from the inside face of the A1-N1 wall to IT / Storage, from the
+  // 5'-0" walkway above the conference room all the way back to the top wall.
   const aL = A1.x + ext;
-  const aTop = walkT + 12;
-  const areaA = Z('Area A', 'cubicle-area', [S(aL, aTop - 12), S(aL + 16, aTop - 12), S(aL + 16, aTop), S(aL, aTop)], '#e3f4f3', {
-    planning: { widthFt: 12, lengthFt: 16, targetMin: 6, targetMax: 8, department: 'Inside Sales / Operations' },
-    notes: '12 x 16 ft cube area marked on the plan ("12x16", 6–8 people), above the 5 ft walkway from the conference room.',
+  const aTop = T_TOP - ext;
+  const aDepth = aTop - walkT;
+  const areaA = Z('Area A', 'cubicle-area', [S(aL, walkT), S(aL + 16, walkT), S(aL + 16, aTop), S(aL, aTop)], '#e3f4f3', {
+    planning: { widthFt: Math.round(aDepth * 100) / 100, lengthFt: 16, targetMin: 6, targetMax: 8, department: 'Inside Sales / Operations' },
+    notes: '16 ft cube area (marked "12x16", 6–8 people), from the 5 ft walkway above the conference room back to the top wall.',
   });
   // Area B: 12' clear from the left wall to the conference wall, 22' deep up to the kitchenette wall.
   const areaB = Z('Area B', 'cubicle-area', [S(ext, ext), S(ext + 12, ext), S(ext + 12, ext + 22), S(ext, ext + 22)], '#e3f4f3', {
