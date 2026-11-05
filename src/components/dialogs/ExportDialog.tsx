@@ -61,6 +61,7 @@ export default function ExportDialog() {
             <Switch checked={o.showSeatCounts} label="Seating counts" onChange={(v) => set({ showSeatCounts: v })} />
             <Switch checked={o.showRoomAreas} label="Area calculations" onChange={(v) => set({ showRoomAreas: v })} />
             <Switch checked={o.showLegend} label="Legend" onChange={(v) => set({ showLegend: v })} />
+            <Switch checked={o.showInventory} label="Furniture inventory" onChange={(v) => set({ showInventory: v })} />
             <Switch checked={o.showVersionAndDate} label="Layout version & date" onChange={(v) => set({ showVersionAndDate: v })} />
             <Switch checked={o.includeBackground} disabled={!project.background} label="Include imported floor plan underlay" onChange={(v) => set({ includeBackground: v })} />
           </div>

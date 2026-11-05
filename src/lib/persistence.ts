@@ -1,6 +1,7 @@
 // Project persistence: IndexedDB for autosave/manual save (no 5 MB localStorage
 // cap, so embedded PDFs fit) and JSON files for import/export.
 
+import { TRINITY_ADDRESS, isTrinityProject, trinityInventory } from './inventory';
 import type { Project } from '@/types/plan';
 import { DEFAULT_LAYERS, DEFAULT_SETTINGS } from './sampleProject';
 
@@ -73,10 +74,15 @@ export function parseProject(text: string): Project {
   }
   const layers = DEFAULT_LAYERS.map((d) => ({ ...d, ...(p.layers ?? []).find((l) => l.id === d.id) }));
   const bg = p.background && p.background.imageDataUrl ? p.background : undefined;
+  // Trinity plans saved before the inventory legend existed get the office's address and inventory.
+  const trinity = isTrinityProject(p as Project);
   return {
     schema: 'trinity-floor-plan',
     version: 1,
     name: p.name ?? 'Imported floor plan',
+    address: p.address ?? (trinity ? TRINITY_ADDRESS : undefined),
+    inventory: Array.isArray(p.inventory) ? p.inventory : trinity ? trinityInventory() : undefined,
+    showInventory: p.showInventory,
     settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) },
     layers,
     background: bg,

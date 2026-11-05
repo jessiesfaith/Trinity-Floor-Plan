@@ -14,6 +14,7 @@ import { add, dist, norm, perp, scale, signedArea, sub, cross } from './geometry
 import { BUILT_IN_TEMPLATES } from './library';
 import { furnitureFromTemplate, makeAisle, makeDimension, makeDoor, makeLabel, makeRoom, makeWall, uid } from './objects';
 import { generateLayouts, type OptionKey } from './generator';
+import { TRINITY_ADDRESS, trinityInventory } from './inventory';
 
 export const DEFAULT_SETTINGS: PlanSettings = {
   units: 'ft-in',
@@ -316,7 +317,7 @@ function buildSuite(): SuiteGeometry {
     hvac(54.18, 3),
     { ...hvac(75.5, 4), rotation: 0 },
     fx('storage-cab', 1.9, T_TOP - ext - 1, 'Sink', { width: 24, depth: 24, color: '#e3d5bf' }),
-    fx('storage-cab', 6.6, T_TOP - ext - 1.25, 'Refrigerator', { width: 30, depth: 30, color: '#e3d5bf' }),
+    fx('storage-cab', 6.6, T_TOP - ext - 1.25, 'Refrigerator', { width: 33.5, depth: 30, color: '#e3d5bf' }),
     fx('shelving', 40.0, stB + 0.21 + 0.75, 'Shelving', { rotation: 180 }),
   ];
 
@@ -398,6 +399,9 @@ export function createSampleProject(): Project {
     schema: 'trinity-floor-plan',
     version: 1,
     name: 'Trinity Office Suite',
+    address: TRINITY_ADDRESS,
+    inventory: trinityInventory(),
+    showInventory: true,
     settings: { ...DEFAULT_SETTINGS },
     layers: structuredClone(DEFAULT_LAYERS),
     scenarios,

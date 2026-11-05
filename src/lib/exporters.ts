@@ -16,6 +16,7 @@ export interface ExportOptions {
   showRoomAreas: boolean;
   showSeatCounts: boolean;
   showLegend: boolean;
+  showInventory: boolean;
   showVersionAndDate: boolean;
   includeBackground: boolean;
   /** Paper inches per real foot (e.g. 0.25 = 1/4" = 1'-0"); null = fit to page. */
@@ -29,6 +30,7 @@ export const DEFAULT_EXPORT: ExportOptions = {
   showRoomAreas: true,
   showSeatCounts: true,
   showLegend: true,
+  showInventory: true,
   showVersionAndDate: true,
   includeBackground: false,
   printScale: null,
@@ -45,7 +47,7 @@ function titleLines(p: Project, o: ExportOptions): string[] {
   const s = activeScenario(p);
   const v = validate(s.objects, p.settings, { background: p.background });
   const c = computeCapacity(s.objects, v);
-  const lines = [`${p.name} — ${s.name}`];
+  const lines = [`${p.name}${p.address ? ` · ${p.address}` : ''} — ${s.name}`];
   if (o.showVersionAndDate) lines.push(`Layout version r${s.revision} · Exported ${new Date().toLocaleString()} · ${o.printScale ? `Scale ${scaleLabel(o.printScale)}` : 'Not to scale'}`);
   if (o.showSeatCounts) lines.push(`Workstations ${c.totalWorkstations} · Seats ${c.totalSeats} (feasible ${c.feasibleSeats}) · Conflicts ${c.conflicts}`);
   if (o.showRoomAreas)
@@ -71,6 +73,8 @@ export function buildSvg(p: Project, o: ExportOptions, extra: Partial<SvgOptions
     background: o.includeBackground ? p.background : undefined,
     layers: p.layers,
     titleBlock: titleLines(p, o),
+    header: p.address || undefined,
+    inventory: o.showInventory ? p.inventory : undefined,
     ...extra,
   });
 }

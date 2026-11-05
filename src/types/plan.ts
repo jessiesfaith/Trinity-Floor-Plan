@@ -253,10 +253,28 @@ export interface FurnitureTemplate {
   builtIn: boolean;
 }
 
+/** One line of the furniture inventory legend (what the office owns today). */
+export interface InventoryItem {
+  id: string;
+  /** Where it lives, e.g. "Cubicles", "IT room". Rows with the same area are listed together. */
+  area: string;
+  item: string;
+  /** Count; null when not known yet. */
+  qty: number | null;
+  /** Free-text size, e.g. 4' x 2' or 34½" W x 13½" D x 66" H. */
+  size: string;
+}
+
 export interface Project {
   schema: 'trinity-floor-plan';
   version: 1;
   name: string;
+  /** Street address, shown as the plan's header. */
+  address?: string;
+  /** Furniture inventory shown in the legend. */
+  inventory?: InventoryItem[];
+  /** Show the inventory legend over the plan (default true). */
+  showInventory?: boolean;
   settings: PlanSettings;
   layers: LayerState[];
   background?: Background;

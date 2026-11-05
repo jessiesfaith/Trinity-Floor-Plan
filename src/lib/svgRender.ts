@@ -2,10 +2,11 @@
 // export, the PDF export raster, scenario thumbnails and generator previews, so
 // every output reflects the editable model (no flattened images).
 
-import type { Background, Dimension, Door, Furniture, LayerState, PlanObject, PlanSettings, Pt, Room, TextLabel, Wall, Aisle } from '@/types/plan';
+import type { InventoryItem, Background, Dimension, Door, Furniture, LayerState, PlanObject, PlanSettings, Pt, Room, TextLabel, Wall, Aisle } from '@/types/plan';
 import { bbox, centroid, rotatePt, add, sub, len, norm, perp, scale } from './geometry';
 import { doorLatch, footprint, pointsOf, roomArea, roomAt, wallPolygon } from './objects';
 import { formatArea, formatLength } from './units';
+import { groupInventory } from './inventory';
 
 export interface SvgOptions {
   view: '2d' | 'presentation';
@@ -20,6 +21,10 @@ export interface SvgOptions {
   padding?: number;
   /** Footer / title block lines. */
   titleBlock?: string[];
+  /** Header across the top (e.g. the street address). */
+  header?: string;
+  /** Furniture inventory, listed under the plan. */
+  inventory?: InventoryItem[];
   pxPerInch?: number;
   /** Override the drawing bounds (e.g. crop a preview to one room). */
   bounds?: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number };
@@ -132,17 +137,36 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
   const b = opts.bounds ?? contentBounds(objects, opts.background);
   const titleH = opts.titleBlock?.length ? 18 * opts.titleBlock.length + 24 : 0;
   const legendH = opts.showLegend ? 70 : 0;
+  const headerH = opts.header ? 34 : 0;
+  // Inventory: whole groups (heading + rows) flow into columns about 300" wide.
+  type InvLine = { text: string; qty?: string; size?: string; heading?: boolean };
+  const invGroups: InvLine[][] = groupInventory(opts.inventory ?? []).map((g) => [
+    { text: g.area, heading: true },
+    ...g.items.map((x) => ({ text: x.item, qty: x.qty == null ? '?' : String(x.qty), size: x.size })),
+  ]);
+  const invCols = Math.max(1, Math.min(4, Math.floor(b.width / 300)));
+  const invTotal = invGroups.reduce((n, g) => n + g.length, 0);
+  const invTarget = Math.ceil(invTotal / invCols);
+  const invColumns: InvLine[][] = [[]];
+  for (const g of invGroups) {
+    const col = invColumns[invColumns.length - 1];
+    if (col.length && col.length + g.length > invTarget + 2 && invColumns.length < invCols) invColumns.push([...g]);
+    else col.push(...g);
+  }
+  const invRows = Math.max(0, ...invColumns.map((c) => c.length));
+  const invH = invTotal ? 26 + invRows * 12 + 14 : 0;
   const vw = b.width + pad * 2;
-  const vh = b.height + pad * 2 + titleH + legendH;
+  const vh = b.height + pad * 2 + titleH + legendH + headerH + invH;
   const k = opts.pxPerInch ?? 2;
   const pres = opts.view === 'presentation';
   const stroke = '#14213d';
   const red = '#d62828';
   const out: string[] = [];
   out.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" overflow="hidden" width="${(vw * k).toFixed(0)}" height="${(vh * k).toFixed(0)}" viewBox="${b.minX - pad} ${b.minY - pad} ${vw} ${vh}" font-family="Inter, Helvetica, Arial, sans-serif">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" overflow="hidden" width="${(vw * k).toFixed(0)}" height="${(vh * k).toFixed(0)}" viewBox="${b.minX - pad} ${b.minY - pad - headerH} ${vw} ${vh}" font-family="Inter, Helvetica, Arial, sans-serif">`,
   );
-  out.push(`<rect x="${b.minX - pad}" y="${b.minY - pad}" width="${vw}" height="${vh}" fill="#ffffff"/>`);
+  out.push(`<rect x="${b.minX - pad}" y="${b.minY - pad - headerH}" width="${vw}" height="${vh}" fill="#ffffff"/>`);
+  if (opts.header) out.push(`<text x="${b.minX + b.width / 2}" y="${b.minY - pad - headerH + 26}" font-size="18" font-weight="bold" text-anchor="middle" fill="#14213d">${esc(opts.header)}</text>`);
 
   const bg = opts.background;
   if (bg && bg.visible && bg.imageDataUrl && visible(opts.layers, 'background')) {
@@ -249,6 +273,22 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
     });
     out.push(`<path d="M${x0 + 4},${y + 50} a12,12 0 0 1 12,-12" fill="none" stroke="${stroke}" stroke-dasharray="3 2" stroke-width="0.7"/><line x1="${x0 + 4}" y1="${y + 50}" x2="${x0 + 4}" y2="${y + 38}" stroke="${stroke}"/><text x="${x0 + 22}" y="${y + 48}" font-size="9" fill="${stroke}">Door swing</text>`);
     y += legendH;
+  }
+  if (invTotal) {
+    const colW = b.width / invCols;
+    out.push(`<text x="${b.minX}" y="${y}" font-size="11" font-weight="bold" fill="${stroke}">Furniture inventory</text>`);
+    invColumns.forEach((col, ci) =>
+      col.forEach((l, i) => {
+        const x = b.minX + ci * colW;
+        const ly = y + 22 + i * 12;
+        if (l.heading) out.push(`<text x="${x}" y="${ly}" font-size="8.5" font-weight="bold" fill="#0f766e">${esc(l.text.toUpperCase())}</text>`);
+        else
+          out.push(
+            `<text x="${x + 16}" y="${ly}" font-size="9" font-weight="bold" text-anchor="end" fill="${stroke}">${esc(l.qty ?? '')}</text><text x="${x + 22}" y="${ly}" font-size="9" fill="${stroke}">${esc(l.text)}${l.size ? `<tspan fill="#64748b">  ${esc(l.size)}</tspan>` : ''}</text>`,
+          );
+      }),
+    );
+    y += invH;
   }
   if (opts.titleBlock?.length) {
     out.push(`<rect x="${b.minX}" y="${y}" width="${b.width}" height="${titleH - 8}" fill="#14213d"/>`);
