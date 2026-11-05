@@ -28,14 +28,35 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     expect(b.height / 12).toBeCloseTo(14, 2);
   });
 
-  it('Office 1 is a 15 x 15 ft clear right triangle with its long side on the 45-degree wall', () => {
-    const pts = room('Office 1').points.map((q) => ({ x: q.x / 12, y: q.y / 12 }));
+  it('Office 1 is a clear right triangle with its 13 ft door wall running straight up to the main entry', () => {
+    const r = room('Office 1');
+    const pts = r.points.map((q) => ({ x: q.x / 12, y: q.y / 12 }));
     expect(pts).toHaveLength(3);
-    const len = (i: number) => Math.hypot(pts[(i + 1) % 3].x - pts[i].x, pts[(i + 1) % 3].y - pts[i].y);
-    const sides = [0, 1, 2].map(len).sort((a, b) => a - b);
-    expect(sides[0]).toBeCloseTo(15, 2);
-    expect(sides[1]).toBeCloseTo(15, 2);
-    expect(sides[2]).toBeCloseTo(Math.hypot(15, 15), 2); // right angle between the two 15 ft sides
+    const b = bbox(pts);
+    expect(b.height).toBeCloseTo(13, 2); // door wall (runs across the suite)
+    expect(pts.some((q) => Math.abs(q.x - b.minX) < 1e-6 && Math.abs(q.y - b.maxY) < 1e-6)).toBe(true); // right angle
+    expect(objs.some((o) => o.kind === 'door' && o.name === 'Office 1 door')).toBe(true);
+  });
+
+  it('matches the on-site measurements along the window wall, left wall and top wall', () => {
+    const w = (n: string) => bbox(room(n).points).width / 12;
+    const h = (n: string) => bbox(room(n).points).height / 12;
+    expect(w('Cubicle Area B')).toBeCloseTo(12, 2);
+    expect(w('Office 4')).toBeCloseTo(12, 2);
+    expect(w('Office 3')).toBeCloseTo(12, 2);
+    expect(h('Office 4')).toBeCloseTo(12, 2);
+    expect(h('Office 3')).toBeCloseTo(12, 2);
+    // Office 2: 17 ft along the window wall (its bottom edge).
+    const o2 = room('Office 2').points.map((q) => ({ x: q.x / 12, y: q.y / 12 }));
+    const bottom = Math.max(...o2.map((q) => q.y));
+    const onWindow = o2.filter((q) => Math.abs(q.y - bottom) < 1e-6).map((q) => q.x);
+    expect(Math.max(...onWindow) - Math.min(...onWindow)).toBeCloseTo(17, 2);
+    // Kitchenette: 10'-3" wide, 11'-8" deep along the left wall.
+    expect(w('Kitchenette')).toBeCloseTo(10.25, 2);
+    expect(h('Kitchenette')).toBeCloseTo(11 + 8 / 12, 2);
+    // IT / Storage: 8'-6" along the top wall x 12' deep.
+    expect(w('IT / Storage')).toBeCloseTo(8.5, 2);
+    expect(h('IT / Storage')).toBeCloseTo(12, 2);
   });
 
   it('cubicle areas match the marked 12 x 16 and 12 x 22 dimensions', () => {

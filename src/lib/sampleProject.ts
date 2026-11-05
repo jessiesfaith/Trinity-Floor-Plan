@@ -98,9 +98,12 @@ export function insetByWalls(center: Pt[], walls: Wall[]): Pt[] {
 // traced positions are accurate to roughly ±6".
 // ---------------------------------------------------------------------------
 
-/** Top window-less wall of the suite sits at t = 32 ft; world y grows downward. */
-const T_TOP = 32;
-const F = (s: number, t: number): Pt => ({ x: s * 12, y: (T_TOP - t) * 12 });
+/**
+ * World placement: y = 0 lies 32 ft in from the window wall (where the traced top wall was) and
+ * world y grows downward. Kept fixed so cubicles placed in earlier versions stay where they were.
+ */
+const Y0 = 32;
+const F = (s: number, t: number): Pt => ({ x: s * 12, y: (Y0 - t) * 12 });
 
 /** Background placement that lines Floor_Plan.pdf up under the traced geometry. */
 export const TRINITY_PDF_ALIGNMENT = {
@@ -148,47 +151,58 @@ interface SuiteGeometry {
 }
 
 function buildSuite(): SuiteGeometry {
-  // ---- Key traced points (feet).
-  // The top wall over Cubicle Area A and IT / Storage sits 1" further out than first traced
-  // (within the ±6" trace), so the marked 14' conference room + 5' walkway + 12' Area A fit exactly.
-  const T_TOP_A = T_TOP + 1 / 12;
-  const L = S(0, 0); // left corner on the window wall
-  const B = S(82.16, 0); // far tip where the 45° wall meets the window wall
-  const E1 = S(52.16, 30); // top of the 45° wall at the main entry
-  const S2 = S(45.2, 30);
-  const S1 = S(42.8, T_TOP_A);
-  const A1 = S(17.8, T_TOP_A);
-  const N1 = S(17.8, 26.7);
-  const K3 = S(14.3, 29.5);
-  const K2 = S(10.4, 29.5);
-  const K1 = S(8.2, 32);
-  const TL = S(0, 32);
-  // Contractor rooms
+  // ---- Key points (feet). Clear (inside) sizes come from the on-site measurements of
+  // Nov 2026 (hand sketch); shapes not measured there keep the Floor_Plan.pdf trace.
+  const ext = 4 / 12; // half of an 8" exterior wall
   const IW = 2.5 / 12; // half of a 5" interior wall
-  const confL = 4 / 12 + 12 + IW; // centerline: 12'-0" clear from the left wall
-  const confR = confL + IW + 24 + IW; // 24'-0" clear
-  const confT = 4 / 12 + 14 + IW; // 14'-0" clear from the window wall
-  const div43 = 48.29;
-  const div32 = 60.25;
-  // Office 1: right triangle by the main entry, 15'-0" clear up the entry-side wall (which runs
-  // straight up to the main-entry corner E1) and 15'-0" clear along its level bottom wall, with
-  // its long side on the 45° wall. (A right angle against a 45° wall makes both sides equal.)
-  const o1a = S(52.16, 14.112); // the right-angle corner
-  const o1e = S(68.048, 14.112); // where the bottom wall meets the 45° wall
-  // The aisle under Office 1 is an even 47" clear: Office 3's top wall drops to stay level and
-  // 47" below Office 1's bottom wall. Office 2's door sits on the same line; a wall runs from
-  // the door's far jamb up to Office 1's corner on the 45° wall.
-  const o3T = 9.779; // top wall of Offices 3 and 4 (one straight line)
+  // Left wall (measured): Cubicle Area B 22'-0" clear, then the kitchenette 11'-8" clear.
+  const kB = ext + 22 + IW; // kitchenette bottom wall centerline
+  const T_TOP = kB + IW + (11 + 8 / 12) + ext; // top (window-less) wall centerline
+  // Kitchenette (measured): 10'-3" clear wide; its right wall (with the door) is 9'-6" clear up
+  // to the angled wall, which cuts the corner back to the top wall.
+  const kR = ext + 10.25 + IW; // right wall centerline
+  const K2 = S(kR, kB + IW + 9.5 + ext);
+  const K1 = S(kR - (T_TOP - K2.y), T_TOP);
+  const TL = S(0, T_TOP);
+  const L = S(0, 0); // left corner on the window wall
+  // Corridor door bay between the kitchenette and Cubicle Area A (as traced).
+  const K3 = S(14.3, K2.y);
+  const N1 = S(17.8, K2.y - 2.8);
+  const A1 = S(17.8, T_TOP);
+  // IT / storage room (measured): 8'-6" along the top wall x 12'-0" deep, right after Area A's 16'.
+  const stL = A1.x + ext + 16 + IW;
+  const stR = stL + IW + 8.5 + IW;
+  const stB = T_TOP - ext - 12 - IW;
+  // Main-entry jog (as traced).
+  const S1 = S(stR + 0.35, T_TOP);
+  const S2 = S(S1.x + 2.4, T_TOP - 2);
+  const E1 = S(S2.x + 6.96, T_TOP - 2); // top of the angled wall at the main entry
+  // Window wall (measured, clear): Area B 12', conference 24', Office 4 12', Office 3 12', Office 2 17'.
+  const confL = ext + 12 + IW;
+  const confR = confL + IW + 24 + IW;
+  const confT = ext + 14 + IW; // conference room 14'-0" deep
+  const div43 = confR + IW + 12 + IW;
+  const div32 = div43 + IW + 12 + IW;
+  const o2In = div32 + IW + 17; // Office 2's inside corner at the window wall
+  // The angled wall runs from E1 down to the window wall, through Office 2's inside corner.
+  // m = rise (t) per foot of s along its inside face.
+  const m = (() => {
+    const D = o2In - E1.x;
+    const c = E1.y - ext;
+    const a = D * D - ext * ext;
+    return (c * D - Math.sqrt(c * c * D * D - a * (c * c - ext * ext))) / a;
+  })();
+  const r = Math.hypot(1, m);
+  const B = S(o2In + (ext + ext * r) / m, 0); // far tip where the angled wall meets the window wall
+  // Office 1 (measured): right triangle by the main entry with 13'-0" clear along its door wall,
+  // which runs straight up to E1; its other side runs level to the angled wall.
+  const o1Top = ext + (o2In - (E1.x + IW)) * m; // inside top corner, on the angled wall
+  const o1a = S(E1.x, o1Top - 13 - IW); // the right-angle corner
+  const o1e = S(o2In - (o1a.y - ext - ext * r) / m, o1a.y); // where its bottom wall meets the angled wall
+  // Offices 3 and 4 (measured): 12'-0" deep. Office 2's door sits on the same line; a wall runs
+  // from the door's far jamb up to Office 1's corner on the angled wall.
+  const o3T = ext + 12 + IW;
   const o2D = S(div32 + 4, o3T); // far jamb of Office 2's door
-  // IT / storage room
-  const stL = 34.41;
-  const stR = 42.45;
-  const stB = 21.85;
-  // Kitchenette walls (new): the bottom wall sits right on top of Cubicle Area B (22' clear from
-  // the window wall); the right wall keeps the traced 8'-6" inside width, with a door into the open area.
-  const kB = 4 / 12 + 22 + IW; // bottom wall centerline
-  const kR = 8.5 + IW; // right wall centerline
-  const kTop = S(kR, K1.y - ((kR - K1.x) / (K2.x - K1.x)) * (K1.y - K2.y)); // where it meets the K1–K2 wall
   // 5'-0" walkway between the conference room and Cubicle Area A.
   const walkB = confT + IW; // conference room's top face
   const walkT = walkB + 5;
@@ -208,12 +222,12 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(TL, S(0, kB), [], 'exterior'), // left wall beside the kitchenette
     ...wallFt(S(0, kB), L, [], 'exterior'), // left wall beside Cubicle Area B (22' clear)
     // IT / storage room (existing)
-    ...wallFt(S(stL, stB), S(stL, T_TOP_A)),
+    ...wallFt(S(stL, stB), S(stL, T_TOP)),
     ...wallFt(S(stL, stB), S(stR, stB), [[0.5, 36]]), // door in the bottom wall, hinged at the left corner
-    ...wallFt(S(stR, stB), S(stR, T_TOP_A)),
+    ...wallFt(S(stR, stB), S(stR, T_TOP)),
     // Kitchenette
     ...wallFt(S(0, kB), S(kR, kB)),
-    ...wallFt(S(kR, kB), kTop, [[1, 36]]), // kitchen door, near the bottom of the right wall
+    ...wallFt(S(kR, kB), K2, [[1, 36]]), // kitchen door, near the bottom of the right wall
     // Conference room (contractor)
     ...wallFt(S(confL, 0), S(confL, confT), [], 'interior', CONTRACTOR),
     ...wallFt(S(confL, confT), S(confR, confT), [[0.75, 36], [20.67, 36]], 'interior', CONTRACTOR),
@@ -241,19 +255,18 @@ function buildSuite(): SuiteGeometry {
   const office3 = fixedRoom(R('Office 3', 'office', [S(div43, 0), S(div32, 0), S(div32, o3T), S(div43, o3T)], '#eef0f6'));
   const office2 = fixedRoom(R('Office 2', 'office', [S(div32, 0), B, o1e, o2D, S(div32, o3T)], '#eef0f6'));
   const office1 = fixedRoom(R('Office 1', 'office', [o1a, o1e, E1], '#eef0f6'));
-  const storage = R('IT / Storage', 'it', [S(stL, stB), S(stR, stB), S(stR, T_TOP_A), S(stL, T_TOP_A)], '#eceff3');
+  const storage = R('IT / Storage', 'it', [S(stL, stB), S(stR, stB), S(stR, T_TOP), S(stL, T_TOP)], '#eceff3');
   const open = R(
     'Open Area',
     'open',
-    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2D, o1e, o1a, E1, S2, S1, S(stR, T_TOP_A), S(stR, stB), S(stL, stB), S(stL, T_TOP_A), A1, N1, K3, K2, kTop, S(kR, kB), S(0, kB)],
+    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2D, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, S(kR, kB), S(0, kB)],
     '#f5f8f7',
   );
   // Zones inside the open area (no walls of their own). Dimensions are clear floor.
-  const ext = 4 / 12; // half of an 8" exterior wall
-  // Area A: 16' along the top wall starting at the inside face of the A1–N1 wall, 12' deep,
-  // ending at the 5'-0" walkway above the conference room.
+  // Area A: 16' along the top wall from the inside face of the A1–N1 wall to IT / Storage, 12' deep,
+  // starting right after the 5'-0" walkway above the conference room (2'-8" is left behind it).
   const aL = A1.x + ext;
-  const aTop = T_TOP_A - ext;
+  const aTop = walkT + 12;
   const areaA = Z('Cubicle Area A', 'cubicle-area', [S(aL, aTop - 12), S(aL + 16, aTop - 12), S(aL + 16, aTop), S(aL, aTop)], '#e3f4f3', {
     planning: { widthFt: 12, lengthFt: 16, targetMin: 6, targetMax: 8, department: 'Inside Sales / Operations' },
     notes: '12 x 16 ft cube area marked on the plan ("12x16", 6–8 people), above the 5 ft walkway from the conference room.',
@@ -263,7 +276,7 @@ function buildSuite(): SuiteGeometry {
     planning: { widthFt: 12, lengthFt: 22, targetMin: 6, targetMax: 8, department: 'Team Workstations' },
     notes: '12 ft along the window wall (to the conference room) x 22 ft deep, up to the kitchenette wall ("22x12").',
   });
-  const kitchen = R('Kitchenette', 'kitchen', [S(0, kB), S(kR, kB), kTop, K1, TL], '#fdf3e4');
+  const kitchen = R('Kitchenette', 'kitchen', [S(0, kB), S(kR, kB), K2, K1, TL], '#fdf3e4');
   const walkway: PlanObject = {
     ...makeAisle(F(aL + 8, 0).x, F(0, (walkB + walkT) / 2).y, 16 * 12, 5 * 12),
     name: "Walkway (5')",
@@ -281,7 +294,7 @@ function buildSuite(): SuiteGeometry {
     doorFt(S2, E1, 0.48, S(47, 25), 'Main entry (left leaf)'),
     doorFt(N1, K3, 0.74, S(16, 24), 'Suite door (corridor)'),
     doorFt(S(stL, stB), S(stR, stB), 0.5, S(38, 24), 'IT / Storage door'),
-    doorFt(S(kR, kB), kTop, 1, S(5, 25), 'Kitchenette door'),
+    doorFt(S(kR, kB), K2, 1, S(5, 25), 'Kitchenette door'),
     doorFt(S(confL, confT), S(confR, confT), 0.75, S(15, 8), 'Conference door 1', 36, CONTRACTOR),
     doorFt(S(confR, confT), S(confL, confT), 0.75, S(34, 8), 'Conference door 2', 36, CONTRACTOR),
     doorFt(S(confR, o3T), S(div43, o3T), 0.4, S(40, 5), 'Office 4 door', 36, CONTRACTOR),
@@ -301,7 +314,7 @@ function buildSuite(): SuiteGeometry {
     hvac(5.56, 1),
     hvac(29.97, 2),
     hvac(54.18, 3),
-    { ...hvac(77.3, 4), rotation: 0 },
+    { ...hvac(75.5, 4), rotation: 0 },
     fx('storage-cab', 1.9, T_TOP - ext - 1, 'Sink', { width: 24, depth: 24, color: '#e3d5bf' }),
     fx('storage-cab', 6.6, T_TOP - ext - 1.25, 'Refrigerator', { width: 30, depth: 30, color: '#e3d5bf' }),
     fx('shelving', 40.0, stB + 0.21 + 0.75, 'Shelving', { rotation: 180 }),
@@ -331,7 +344,7 @@ function buildSuite(): SuiteGeometry {
   const street = makeLabel(F(41, -3).x, F(41, -3).y, 'JULIETTE LANE  (window wall)');
   street.style = { ...street.style, color: '#4a5670', fontSize: 12, fontWeight: 'bold' };
   street.name = 'Street label';
-  const source = makeLabel(F(66, 32).x, F(66, 32).y, 'Traced from Floor_Plan.pdf (scale ±6"). Conference room and Offices 1–4 are contractor-fixed.');
+  const source = makeLabel(F(66, 34).x, F(66, 34).y, 'Traced from Floor_Plan.pdf (scale ±6"). Conference room and Offices 1–4 are contractor-fixed.');
   source.style = { ...source.style, color: '#d62828', fontSize: 9, background: '#fff5f5' };
   source.name = 'Source note';
 
