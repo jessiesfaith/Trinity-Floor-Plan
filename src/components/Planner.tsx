@@ -132,7 +132,7 @@ export default function Planner() {
       }
       const room = roomAt(objs, at);
       const n = objs.filter((o) => o.kind === 'furniture' && o.type === t.type).length + 1;
-      const name = t.type === 'cubicle' ? `Cubicle ${String(n).padStart(2, '0')}` : t.label;
+      const name = t.type === 'cubicle' ? `Cubicle ${String(n).padStart(2, '0')}` : t.type === 'phone-booth' ? `Phone booth ${n}` : t.label;
       const f = furnitureFromTemplate(t, at.x, at.y, name);
       if (room?.planning?.department && f.isWorkstation) f.department = room.planning.department;
       st().addObjects([f]);

@@ -16,7 +16,14 @@ function isFloorPlanObject(o: PlanObject, starterNames: Set<string>): boolean {
 }
 
 /** Names the starter plan's own objects had in earlier releases, so updating replaces them too. */
-const PREVIOUS_STARTER_NAMES = ["dimension:Area B width (14')"];
+const PREVIOUS_STARTER_NAMES = [
+  "dimension:Area B width (14')",
+  // Four HVAC units were drawn from the PDF; the suite has one (now "Dedicated tenant HVAC").
+  'furniture:HVAC unit 1',
+  'furniture:HVAC unit 2',
+  'furniture:HVAC unit 3',
+  'furniture:HVAC unit 4',
+];
 
 export interface FloorPlanUpdate {
   project: Project;
@@ -63,11 +70,13 @@ function geometryKey(objs: PlanObject[]): string {
 
 /**
  * True when a project is a Trinity suite plan (it has the contractor-fixed rooms) whose floor
- * plan in any layout differs from the current starter plan, so "Update floor plan" would help.
+ * plan in any layout differs from the current starter plan, or still has fixtures the starter
+ * plan has since dropped, so "Update floor plan" would help.
  */
 export function floorPlanIsOutdated(project: Project): boolean {
   const isTrinity = project.scenarios.some((s) => s.objects.some((o) => o.kind === 'room' && o.fixed === 'Contractor-fixed'));
   if (!isTrinity) return false;
   starterGeometryKey ??= geometryKey(createSampleProject().scenarios[0].objects);
-  return project.scenarios.some((s) => geometryKey(s.objects) !== starterGeometryKey);
+  const retired = new Set(PREVIOUS_STARTER_NAMES);
+  return project.scenarios.some((s) => geometryKey(s.objects) !== starterGeometryKey || s.objects.some((o) => retired.has(`${o.kind}:${o.name}`)));
 }

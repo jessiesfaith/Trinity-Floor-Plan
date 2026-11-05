@@ -907,11 +907,11 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
               );
             })}
 
-          {/* Cubicle wall lengths: the width and depth along two sides of each cubicle */}
+          {/* Cubicle and phone booth wall lengths: the width and depth along two sides of each */}
           {visibleLayer('furniture') &&
             settings.showGuides &&
             furniture
-              .filter((f) => f.type === 'cubicle' && Math.min(f.width, f.depth) * view.k > 25)
+              .filter((f) => (f.type === 'cubicle' || f.type === 'phone-booth') && Math.min(f.width, f.depth) * view.k > 25)
               .flatMap((f) => {
                 const c = footprint(f);
                 const fs = 7.5 * px;

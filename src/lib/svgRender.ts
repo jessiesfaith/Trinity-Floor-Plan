@@ -102,6 +102,14 @@ export function furnitureSymbol(f: Furniture, view: '2d' | 'presentation', strok
       parts.push(`<circle r="${Math.min(hw, hd)}" fill="${view === 'presentation' ? '#7fb77e' : '#fff'}" stroke="${stroke}" stroke-width="${sw}"/>`);
       parts.push(`<circle r="${Math.min(hw, hd) * 0.45}" fill="none" stroke="${stroke}" stroke-width="0.5"/>`);
       break;
+    case 'phone-booth': {
+      const t = 3;
+      parts.push(`<rect x="${-hw}" y="${-hd}" width="${w}" height="${d}" fill="${fill}" stroke="none"/>`);
+      parts.push(`<path d="M${-hw + t / 2},${hd} V${-hd + t / 2} H${hw - t / 2} V${hd}" fill="none" stroke="${stroke}" stroke-width="${t}"/>`);
+      parts.push(`<line x1="${-hw + t}" y1="${hd - 0.8}" x2="${hw - t}" y2="${hd - 0.8}" stroke="#5aa9c9" stroke-width="1.6"/>`);
+      parts.push(`<rect x="${-hw + t}" y="${-hd + t}" width="${w - 2 * t}" height="${Math.min(12, d * 0.3)}" fill="none" stroke="${stroke}" stroke-width="0.6"/><circle cy="${hd * 0.25}" r="${Math.min(7, w * 0.18)}" fill="none" stroke="${stroke}" stroke-width="0.6"/>`);
+      break;
+    }
     case 'printer':
       parts.push(`<rect x="${-hw}" y="${-hd}" width="${w}" height="${d}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/><rect x="${-hw * 0.6}" y="${-hd * 0.6}" width="${w * 0.6}" height="${d * 0.4}" fill="none" stroke="${stroke}" stroke-width="0.5"/>`);
       break;

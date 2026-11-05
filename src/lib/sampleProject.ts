@@ -200,10 +200,10 @@ function buildSuite(): SuiteGeometry {
   const o1Top = ext + (o2In - (E1.x + IW)) * m; // inside top corner, on the angled wall
   const o1a = S(E1.x, o1Top - 13 - IW); // the right-angle corner
   const o1e = S(o2In - (o1a.y - ext - ext * r) / m, o1a.y); // where its bottom wall meets the angled wall
-  // Offices 3 and 4 (measured): 12'-0" deep. Office 2's door sits on the same line; a wall runs
-  // from the door's far jamb up to Office 1's corner on the angled wall.
+  // Offices 2, 3 and 4 (measured): 12'-0" deep. Their top wall is one straight line that runs
+  // from the conference room out to the angled wall; Office 2's door is in it.
   const o3T = ext + 12 + IW;
-  const o2D = S(div32 + 4, o3T); // far jamb of Office 2's door
+  const o2T = S(o2In - (o3T - ext - ext * r) / m, o3T); // where that wall meets the angled wall
   // 5'-0" walkway between the conference room and Cubicle Area A.
   const walkB = confT + IW; // conference room's top face
   const walkT = walkB + 5;
@@ -238,8 +238,7 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(S(div32, o3T), S(div43, o3T), [[0.3, 36]], 'interior', CONTRACTOR), // Office 3 top wall + door
     ...wallFt(S(div43, o3T), S(div43, 0), [], 'interior', CONTRACTOR),
     ...wallFt(S(div32, o3T), S(div32, 0), [], 'interior', CONTRACTOR),
-    ...wallFt(S(div32, o3T), o2D, [[0.5, 36]], 'interior', CONTRACTOR), // Office 2 door
-    ...wallFt(o2D, o1e, [], 'interior', CONTRACTOR), // Office 2 wall up to Office 1's corner
+    ...wallFt(S(div32, o3T), o2T, [[0.5, 36]], 'interior', CONTRACTOR), // Office 2 top wall + door, out to the angled wall
     // Office 1 (contractor) — right triangle by the main entry
     ...wallFt(o1a, E1, [[0.6, 36]], 'interior', CONTRACTOR),
     ...wallFt(o1a, o1e, [], 'interior', CONTRACTOR),
@@ -254,13 +253,13 @@ function buildSuite(): SuiteGeometry {
   const conference = fixedRoom(R('Conference Room', 'conference', [S(confL, 0), S(confR, 0), S(confR, confT), S(confL, confT)], '#e9eef8'));
   const office4 = fixedRoom(R('Office 4', 'office', [S(confR, 0), S(div43, 0), S(div43, o3T), S(confR, o3T)], '#eef0f6'));
   const office3 = fixedRoom(R('Office 3', 'office', [S(div43, 0), S(div32, 0), S(div32, o3T), S(div43, o3T)], '#eef0f6'));
-  const office2 = fixedRoom(R('Office 2', 'office', [S(div32, 0), B, o1e, o2D, S(div32, o3T)], '#eef0f6'));
+  const office2 = fixedRoom(R('Office 2', 'office', [S(div32, 0), B, o2T, S(div32, o3T)], '#eef0f6'));
   const office1 = fixedRoom(R('Office 1', 'office', [o1a, o1e, E1], '#eef0f6'));
   const storage = R('IT / Storage', 'it', [S(stL, stB), S(stR, stB), S(stR, T_TOP), S(stL, T_TOP)], '#eceff3');
   const open = R(
     'Open Area',
     'open',
-    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2D, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, S(kR, kB), S(0, kB)],
+    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2T, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, S(kR, kB), S(0, kB)],
     '#f5f8f7',
   );
   // Zones inside the open area (no walls of their own). Dimensions are clear floor.
@@ -293,14 +292,14 @@ function buildSuite(): SuiteGeometry {
   const doors = [
     doorFt(E1, S2, 0.48, S(50, 25), 'Main entry (right leaf)'),
     doorFt(S2, E1, 0.48, S(47, 25), 'Main entry (left leaf)'),
-    doorFt(N1, K3, 0.74, S(16, 24), 'Suite door (corridor)'),
+    doorFt(K3, N1, 0.74, S(18, T_TOP + 2), 'Suite door (corridor)'), // hinged on the kitchen side, swings out into the building corridor
     doorFt(S(stL, stB), S(stR, stB), 0.5, S(38, 24), 'IT / Storage door'),
     doorFt(S(kR, kB), K2, 1, S(5, 25), 'Kitchenette door'),
     doorFt(S(confL, confT), S(confR, confT), 0.75, S(15, 8), 'Conference door 1', 36, CONTRACTOR),
     doorFt(S(confR, confT), S(confL, confT), 0.75, S(34, 8), 'Conference door 2', 36, CONTRACTOR),
     doorFt(S(confR, o3T), S(div43, o3T), 0.4, S(40, 5), 'Office 4 door', 36, CONTRACTOR),
     doorFt(S(div32, o3T), S(div43, o3T), 0.3, S(57, 5), 'Office 3 door', 36, CONTRACTOR),
-    doorFt(S(div32, o3T), o2D, 0.5, S(62, 5), 'Office 2 door', 36, CONTRACTOR),
+    doorFt(S(div32, o3T), o2T, 0.5, S(62, 5), 'Office 2 door', 36, CONTRACTOR),
     doorFt(o1a, E1, 0.6, S(56, 20), 'Office 1 door', 36, CONTRACTOR),
   ];
 
@@ -309,13 +308,9 @@ function buildSuite(): SuiteGeometry {
     const p = F(s, t);
     return { ...furnitureFromTemplate(tpl(id), p.x, p.y, name, 0), locked: true, notes: 'Shown on Floor_Plan.pdf', ...patch };
   };
-  const hvac = (s: number, n: number) =>
-    fx('storage-cab', s, ext + 1, `HVAC unit ${n}`, { type: 'custom', width: 24, depth: 24, color: '#c9ced8', deskType: '', notes: 'Dedicated tenant HVAC unit, from the plan' });
+  // The suite has one dedicated tenant HVAC unit, by the window wall in Cubicle Area B (on-site sketch).
   const fixtures: Furniture[] = [
-    hvac(5.56, 1),
-    hvac(29.97, 2),
-    hvac(54.18, 3),
-    { ...hvac(75.5, 4), rotation: 0 },
+    fx('storage-cab', 5.56, ext + 1, 'Dedicated tenant HVAC', { type: 'custom', width: 24, depth: 24, color: '#c9ced8', deskType: '', notes: 'Dedicated tenant HVAC unit' }),
     fx('storage-cab', 1.9, T_TOP - ext - 1, 'Sink', { width: 24, depth: 24, color: '#e3d5bf' }),
     fx('storage-cab', 6.6, T_TOP - ext - 1.25, 'Refrigerator', { width: 33.5, depth: 30, color: '#e3d5bf' }),
     fx('shelving', 40.0, stB + 0.21 + 0.75, 'Shelving', { rotation: 180 }),

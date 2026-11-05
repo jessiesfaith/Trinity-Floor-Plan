@@ -111,6 +111,7 @@ export type FurnitureType =
   | 'shelving'
   | 'printer'
   | 'partition'
+  | 'phone-booth'
   | 'plant'
   | 'custom';
 

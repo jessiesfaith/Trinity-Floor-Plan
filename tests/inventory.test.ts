@@ -18,7 +18,8 @@ describe('furniture inventory legend', () => {
     expect(qty('Tall file cabinets', 'Offices')).toBe(2);
     expect(qty('Tall file cabinets', 'Printer area')).toBe(3);
     expect(qty('Dedicated tenant HVAC')).toBe(1);
-    expect(groupInventory(inv).map((g) => g.area)).toEqual(['Cubicles', 'Offices', 'Printer area', 'IT room', 'Kitchen', 'Conference room', 'Building']);
+    expect(qty('Phone booths')).toBe(2);
+    expect(groupInventory(inv).map((g) => g.area)).toEqual(['Cubicles', 'Offices', 'Printer area', 'Phone booths', 'IT room', 'Kitchen', 'Conference room', 'Building']);
   });
 
   it('an unedited saved copy of the first list and header is updated; an edited one is kept', () => {

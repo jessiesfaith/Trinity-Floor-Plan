@@ -174,6 +174,30 @@ export function drawFurniture(ctx: Ctx, f: Furniture, pres: boolean, stroke: str
       ctx.fillStyle = stroke;
       ctx.fillRect(-hw, -hd, w, d);
       break;
+    case 'phone-booth': {
+      // Enclosed booth: solid walls on three sides, a glass door across the front (+y),
+      // a small work shelf at the back and a stool.
+      const t = 3;
+      ctx.fillStyle = pres ? f.color : '#ffffff';
+      ctx.fillRect(-hw, -hd, w, d);
+      ctx.fillStyle = stroke;
+      ctx.fillRect(-hw, -hd, w, t);
+      ctx.fillRect(-hw, -hd, t, d);
+      ctx.fillRect(hw - t, -hd, t, d);
+      ctx.strokeStyle = '#5aa9c9';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-hw + t, hd - 0.8);
+      ctx.lineTo(hw - t, hd - 0.8);
+      ctx.stroke();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 0.6;
+      ctx.strokeRect(-hw + t, -hd + t, w - 2 * t, Math.min(12, d * 0.3));
+      ctx.beginPath();
+      ctx.arc(0, hd * 0.25, Math.min(7, w * 0.18), 0, Math.PI * 2);
+      ctx.stroke();
+      break;
+    }
     case 'printer':
       box();
       ctx.lineWidth = 0.5;

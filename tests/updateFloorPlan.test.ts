@@ -3,7 +3,7 @@ import { createSampleProject } from '@/lib/sampleProject';
 import { updateFloorPlan } from '@/lib/updateFloorPlan';
 import { furnitureFromTemplate, makeAisle, makeDimension, makeLabel } from '@/lib/objects';
 import { BUILT_IN_TEMPLATES } from '@/lib/library';
-import type { PlanObject, Project, Room } from '@/types/plan';
+import type { Furniture, PlanObject, Project, Room } from '@/types/plan';
 
 const cubicle = BUILT_IN_TEMPLATES.find((t) => t.id === 'cub-5x5')!;
 const geometry = (objs: PlanObject[]) =>
@@ -47,7 +47,7 @@ describe('Update floor plan', () => {
     expect(l1.some((o) => o.kind === 'aisle')).toBe(true);
     expect(l1.some((o) => o.kind === 'label' && o.text === 'Printer goes here')).toBe(true);
     // the starter plan's own fixtures and notes are not duplicated
-    expect(l1.filter((o) => o.name === 'HVAC unit 1')).toHaveLength(1);
+    expect(l1.filter((o) => o.name === 'Dedicated tenant HVAC')).toHaveLength(1);
     expect(l1.filter((o) => o.kind === 'label' && o.name === 'Source note')).toHaveLength(1);
   });
 
@@ -66,6 +66,26 @@ describe('Update floor plan', () => {
     expect(kept).toBe(0);
     expect(geometry(project.scenarios[0].objects)).toEqual(geometry(p.scenarios[0].objects));
     expect(project.scenarios[0].objects).toHaveLength(p.scenarios[0].objects.length);
+  });
+});
+
+describe('retired HVAC units', () => {
+  it('Update floor plan removes the three extra HVAC units and is offered while they are there', async () => {
+    const { floorPlanIsOutdated } = await import('@/lib/updateFloorPlan');
+    const p = createSampleProject();
+    const hvac = p.scenarios[0].objects.find((o): o is Furniture => o.kind === 'furniture' && o.name === 'Dedicated tenant HVAC')!;
+    for (const s of p.scenarios) {
+      s.objects = s.objects.filter((o) => o.name !== 'Dedicated tenant HVAC');
+      for (let n = 1; n <= 4; n++) s.objects.push({ ...hvac, id: `hv${n}`, name: `HVAC unit ${n}`, x: hvac.x + n * 100 } as PlanObject);
+    }
+    expect(floorPlanIsOutdated(p)).toBe(true);
+    const { project, kept } = updateFloorPlan(p);
+    expect(kept).toBe(0);
+    for (const s of project.scenarios) {
+      expect(s.objects.filter((o) => o.name.startsWith('HVAC unit'))).toHaveLength(0);
+      expect(s.objects.filter((o) => o.name === 'Dedicated tenant HVAC')).toHaveLength(1);
+    }
+    expect(floorPlanIsOutdated(project)).toBe(false);
   });
 });
 

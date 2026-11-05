@@ -20,6 +20,7 @@ const TRINITY_ITEMS: Row[] = [
   ['Offices', 'Small file cabinets', 2, ''],
   ['Offices', 'Tall file cabinets', 2, ''],
   ['Printer area', 'Tall file cabinets', 3, ''],
+  ['Phone booths', 'Phone booths', 2, ''],
   ['IT room', 'Bookshelf', 1, '34½" x 13½" x 66" H'],
   ['IT room', 'Server rack', 1, "7' H"],
   ['IT room', 'Metal racks', 2, '30" x 14" x 62" H'],
@@ -56,7 +57,31 @@ export const FIRST_ITEMS: Row[] = [
   ['Conference room', 'Chairs', 11, ''],
   ['Building', 'Dedicated tenant HVAC units', 4, 'shown on the plan'],
 ];
-const PREVIOUS_ITEMS: Row[][] = [FIRST_ITEMS];
+/** The second default list (commit 7faff23). */
+const SECOND_ITEMS: Row[] = [
+  ['Cubicles', 'Long cubicle walls', 29, "4' wide"],
+  ['Cubicles', 'Short cubicle walls', 13, "2' wide"],
+  ['Cubicles', 'Short desks', 13, "2' x 2'"],
+  ['Cubicles', 'Long desks', 8, "4' x 2'"],
+  ['Cubicles', 'Corner desks', 8, "L: 2' x 4' + 4' x 2', 4' corner"],
+  ['Cubicles', 'Hanging shelves (in cubicles)', 8, "4' x 2'"],
+  ['Cubicles', 'Small file cabinets', 8, ''],
+  ['Cubicles', 'Long file cabinets', 8, ''],
+  ['Offices', 'Small file cabinets', 2, ''],
+  ['Offices', 'Tall file cabinets', 2, ''],
+  ['Printer area', 'Tall file cabinets', 3, ''],
+  ['IT room', 'Bookshelf', 1, '34½" x 13½" x 66" H'],
+  ['IT room', 'Server rack', 1, "7' H"],
+  ['IT room', 'Metal racks', 2, '30" x 14" x 62" H'],
+  ['Kitchen', 'Round table', 1, "4' diameter"],
+  ['Kitchen', 'Chairs', 4, ''],
+  ['Kitchen', 'Refrigerator', 1, '33½" x 30" x 67" H'],
+  ['Kitchen', 'Cabinet', 1, ''],
+  ['Conference room', 'Table', 1, "7' x 14'"],
+  ['Conference room', 'Chairs', 11, ''],
+  ['Building', 'Dedicated tenant HVAC', 1, ''],
+];
+const PREVIOUS_ITEMS: Row[][] = [FIRST_ITEMS, SECOND_ITEMS];
 const PREVIOUS_ADDRESSES = ['2350 Mission College Blvd, Suite 330'];
 
 const rowsKey = (rows: Row[]) => JSON.stringify(rows);

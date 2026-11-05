@@ -15,6 +15,7 @@ export const BUILT_IN_TEMPLATES: FurnitureTemplate[] = [
   T({ id: 'bench-4', label: 'Bench (4-person)', category: 'Workstations', type: 'bench', width: 120, depth: 60, color: '#e7dcc8', isWorkstation: true, seats: 4, access: 'both-chair', deskType: 'Bench 4-person' }),
   T({ id: 'bench-6', label: 'Bench (6-person)', category: 'Workstations', type: 'bench', width: 180, depth: 60, color: '#e7dcc8', isWorkstation: true, seats: 6, access: 'both-chair', deskType: 'Bench 6-person' }),
   T({ id: 'desk-l', label: 'L-shaped desk 60×60', category: 'Workstations', type: 'l-desk', width: 60, depth: 60, color: '#e7dcc8', isWorkstation: true, seats: 1, access: 'front-chair', deskType: 'L-shaped' }),
+  T({ id: 'phone-booth', label: 'Phone booth (1-person)', category: 'Workstations', type: 'phone-booth', width: 40, depth: 40, color: '#dfe7f3', isWorkstation: false, seats: 0, access: 'none', deskType: '' }),
   T({ id: 'chair', label: 'Office chair', category: 'Seating', type: 'chair', width: 24, depth: 24, color: '#5b6b8c', isWorkstation: false, seats: 0, access: 'none', deskType: '', overlapsAllowed: true }),
   T({ id: 'conf-8', label: 'Conference table 8-seat', category: 'Tables', type: 'conference-table', width: 120, depth: 48, color: '#d9c7a7', isWorkstation: false, seats: 8, access: 'none', deskType: '' }),
   T({ id: 'conf-12', label: 'Conference table 12-seat', category: 'Tables', type: 'conference-table', width: 168, depth: 54, color: '#d9c7a7', isWorkstation: false, seats: 12, access: 'none', deskType: '' }),
