@@ -31,6 +31,7 @@ export default function Planner() {
   const project = usePlanStore((s) => s.project);
   const dirty = usePlanStore((s) => s.dirty);
   const selectedIds = usePlanStore((s) => s.selectedIds);
+  const focusRoom = usePlanStore((s) => s.focusRoom);
   const [ready, setReady] = useState(false);
   const [rightTab, setRightTab] = useState('properties');
   // On narrow screens (below 1024px) the side panels fold away and open over the plan.
@@ -217,6 +218,20 @@ export default function Planner() {
             <button className="rounded border border-slate-300 px-1.5 lg:hidden" onClick={() => { setLeftOpen((o) => !o); setRightOpen(false); }}>
               {leftOpen ? 'Close' : 'Library'}
             </button>
+            {/* View tabs: the whole plan, or zoom in on one cubicle area */}
+            <div className="flex overflow-hidden rounded border border-slate-300" role="tablist" aria-label="View">
+              {[null, ...scenario.objects.filter((o) => o.kind === 'room' && o.roomType === 'cubicle-area').map((o) => o.name)].map((n) => (
+                <button
+                  key={n ?? 'all'}
+                  role="tab"
+                  aria-selected={focusRoom === n}
+                  className={`px-2 py-0.5 ${focusRoom === n ? 'bg-navy text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                  onClick={() => st().setFocusRoom(n)}
+                >
+                  {n ?? 'Whole plan'}
+                </button>
+              ))}
+            </div>
             <span className="font-semibold text-navy">{scenario.name}</span>
             <span className="text-slate-400">r{scenario.revision}</span>
             <span className="text-slate-300">|</span>

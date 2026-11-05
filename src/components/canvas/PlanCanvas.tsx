@@ -68,6 +68,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
   const tool = usePlanStore((s) => s.tool);
   const viewMode = usePlanStore((s) => s.view);
   const fitNonce = usePlanStore((s) => s.fitNonce);
+  const focusName = usePlanStore((s) => s.focusRoom);
   const store = usePlanStore;
 
   const scenario = activeScenario(project);
@@ -91,13 +92,23 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
     return () => ro.disconnect();
   }, []);
 
+  // Area view: only the chosen room (plus a margin for its walls and dimension lines) is drawn.
+  const focusRoom = focusName ? objects.find((o): o is Room => o.kind === 'room' && o.name === focusName) : undefined;
+  const FOCUS_PAD = 66;
+  const focusBox = useMemo(() => {
+    if (!focusRoom) return null;
+    const b = bbox(focusRoom.points);
+    return { minX: b.minX - FOCUS_PAD, minY: b.minY - FOCUS_PAD, maxX: b.maxX + FOCUS_PAD, maxY: b.maxY + FOCUS_PAD, width: b.width + 2 * FOCUS_PAD, height: b.height + 2 * FOCUS_PAD };
+  }, [focusRoom]);
+  const clip = focusBox ? { clipX: focusBox.minX, clipY: focusBox.minY, clipWidth: focusBox.width, clipHeight: focusBox.height } : {};
+
   const fit = useCallback(() => {
-    const b = contentBounds(objects, bg?.visible ? bg : undefined);
+    const b = focusBox ?? contentBounds(objects, bg?.visible ? bg : undefined);
     const pad = 40;
     const k = Math.min((size.w - pad * 2) / Math.max(1, b.width), (size.h - pad * 2) / Math.max(1, b.height));
     setViewState({ k, x: pad - b.minX * k + (size.w - pad * 2 - b.width * k) / 2, y: pad - b.minY * k + (size.h - pad * 2 - b.height * k) / 2 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [size.w, size.h, scenario.id, bg?.imageDataUrl]);
+  }, [size.w, size.h, scenario.id, bg?.imageDataUrl, focusBox]);
 
   useEffect(() => {
     if (size.w > 100) fit();
@@ -696,7 +707,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
   return (
     <div
       ref={wrapRef}
-      className="relative h-full w-full overflow-hidden bg-white"
+      className={`relative h-full w-full overflow-hidden ${focusBox ? 'bg-slate-200' : 'bg-white'}`}
       style={{ cursor: cursorStyle, touchAction: 'none' }}
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes('application/x-fp-template')) e.preventDefault();
@@ -730,7 +741,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
         onContextMenu={(e) => e.evt.preventDefault()}
       >
         {/* Static layer: background + grid (not listening = cheap) */}
-        <Layer listening={!!bg && !bg.locked && !layerOf('background').locked && tool === 'select'}>
+        <Layer listening={!!bg && !bg.locked && !layerOf('background').locked && tool === 'select'} {...clip}>
           <Rect name="bg" x={-1e5} y={-1e5} width={2e5} height={2e5} fill={pres ? '#f4f5f7' : '#ffffff'} />
           {gridShape}
           {bg && bgImg && bg.visible && visibleLayer('background') && (
@@ -749,7 +760,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
           )}
         </Layer>
 
-        <Layer>
+        <Layer {...clip}>
           {/* Rooms */}
           {visibleLayer('rooms') &&
             rooms.map((r) => (

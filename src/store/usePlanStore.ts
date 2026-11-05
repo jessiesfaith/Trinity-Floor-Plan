@@ -45,6 +45,9 @@ interface PlanState {
   dirty: boolean;
   /** Bumped to ask the canvas to fit the drawing to the screen. */
   fitNonce: number;
+  /** Name of the room the canvas is zoomed in on (e.g. a cubicle area); null = whole plan. */
+  focusRoom: string | null;
+  setFocusRoom: (name: string | null) => void;
   validation: ValidationResult | null;
   setValidation: (v: ValidationResult) => void;
 
@@ -127,6 +130,7 @@ export const usePlanStore = create<PlanState>((set, get) => ({
   savedAt: null,
   dirty: false,
   fitNonce: 0,
+  focusRoom: null,
   validation: null,
   setValidation: (validation) => set({ validation }),
 
@@ -298,4 +302,5 @@ export const usePlanStore = create<PlanState>((set, get) => ({
     }),
   markSaved: () => set({ dirty: false, savedAt: new Date().toISOString() }),
   requestFit: () => set({ fitNonce: get().fitNonce + 1 }),
+  setFocusRoom: (name) => set({ focusRoom: name, fitNonce: get().fitNonce + 1, selectedIds: [] }),
 }));
