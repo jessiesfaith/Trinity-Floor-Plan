@@ -7,8 +7,8 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, Check, Blocks } from 'lucide-react';
 import type { InventoryItem } from '@/types/plan';
 import { activeScenario, usePlanStore } from '@/store/usePlanStore';
-import { inventoryKey, isCubicleFurniture, usedByItem } from '@/lib/cubicleParts';
-import { isWallsLayout, rebuildCubicleWalls } from '@/lib/wallsLayout';
+import { inventoryKey, isCubicleFurniture, LONG_WALL, LONG_WALL_COLOR, SHORT_WALL, SHORT_WALL_COLOR, usedByItem } from '@/lib/cubicleParts';
+import { floorPlanLayoutOf, isWallsLayout, rebuildCubicleWalls } from '@/lib/wallsLayout';
 import { blankInventoryItem, groupInventory } from '@/lib/inventory';
 
 const st = usePlanStore.getState;
@@ -144,6 +144,49 @@ export function InventoryLegend() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Cubicle walls tab: how many cubicles, and long / short cube walls placed against what the office owns. */
+export function WallCountBox() {
+  const project = usePlanStore((s) => s.project);
+  const walls = activeScenario(project);
+  if (!isWallsLayout(walls)) return null;
+  const plan = floorPlanLayoutOf(project);
+  const cubicles = plan.objects.filter((o) => o.kind === 'furniture' && o.type === 'cubicle').length;
+  const placed = (key: string) => walls.objects.filter((o) => o.kind === 'furniture' && o.inventoryItem === key).length;
+  const owned = (key: string) => project.inventory?.find((x) => inventoryKey(x) === key)?.qty ?? null;
+  const rows = [
+    { label: "Long walls (4')", color: LONG_WALL_COLOR, used: placed(LONG_WALL), have: owned(LONG_WALL) },
+    { label: "Short walls (2')", color: SHORT_WALL_COLOR, used: placed(SHORT_WALL), have: owned(SHORT_WALL) },
+  ];
+  return (
+    <div className="absolute left-2 top-12 z-10 w-60 rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-xs shadow-lg backdrop-blur">
+      <div className="mb-1 font-semibold text-navy">Cube wall count</div>
+      <div className="mb-1.5 flex justify-between border-b border-slate-100 pb-1">
+        <span>Cubicles (floor plan)</span>
+        <span className="font-semibold tabular-nums text-navy">{cubicles}</span>
+      </div>
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-2 gap-y-0.5 tabular-nums">
+        <span className="text-[10px] uppercase tracking-wide text-slate-500" />
+        <span className="text-right text-[10px] uppercase tracking-wide text-slate-500">Used</span>
+        <span className="text-right text-[10px] uppercase tracking-wide text-slate-500">Have</span>
+        <span className="text-right text-[10px] uppercase tracking-wide text-slate-500">Left</span>
+        {rows.map((r) => {
+          const left = r.have == null ? null : r.have - r.used;
+          return [
+            <span key={`${r.label}-l`} className="flex items-center gap-1.5 font-medium" style={{ color: r.color }}>
+              <span className="inline-block h-1 w-4 rounded" style={{ background: r.color }} />
+              {r.label}
+            </span>,
+            <span key={`${r.label}-u`} className="text-right font-semibold text-navy">{r.used}</span>,
+            <span key={`${r.label}-h`} className="text-right text-slate-600">{r.have ?? '?'}</span>,
+            <span key={`${r.label}-r`} className={`text-right font-semibold ${left != null && left < 0 ? 'text-red-700' : 'text-teal-700'}`}>{left ?? '?'}</span>,
+          ];
+        })}
+      </div>
+      {rows.some((r) => r.have != null && r.used > r.have) && <div className="mt-1.5 text-[10px] font-semibold text-red-700">More walls placed than the office has.</div>}
     </div>
   );
 }

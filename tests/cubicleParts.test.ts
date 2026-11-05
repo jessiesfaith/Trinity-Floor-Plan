@@ -57,3 +57,19 @@ describe("the office's current layout", () => {
     expect(all.get(key('Long cubicle walls'))).toBe(38);
   });
 });
+
+describe('cube walls and phone booths against building walls', () => {
+  it('are not flagged when pushed up against a wall, only when they run through it', async () => {
+    const { validate } = await import('@/lib/validation');
+    const { makeWall } = await import('@/lib/objects');
+    const p = createSampleProject();
+    const wall = { ...makeWall({ x: 0, y: 0 }, { x: 0, y: 400 }, 'interior'), thickness: 5 }; // faces at x = +/-2.5
+    const t = (id: string) => BUILT_IN_TEMPLATES.find((x) => x.id === id)!;
+    const errs = (objs: PlanObject[]) => validate([wall, ...objs], p.settings).issues.filter((i) => i.severity === 'error' && i.code === 'wall').length;
+    // a 4' cube wall whose end tucks 2" into the wall, and a phone booth 2" into it
+    expect(errs([furnitureFromTemplate(t('part-wall-4'), 24 + 0.5, 100, 'W', 0)])).toBe(0);
+    expect(errs([furnitureFromTemplate(t('phone-booth'), 20 + 0.5, 200, 'B', 0)])).toBe(0);
+    // but one that runs 6" through it still is
+    expect(errs([furnitureFromTemplate(t('part-wall-4'), 24 - 6, 100, 'W', 0)])).toBe(1);
+  });
+});

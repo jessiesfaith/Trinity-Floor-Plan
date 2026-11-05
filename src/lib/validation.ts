@@ -257,10 +257,16 @@ export function validate(objects: PlanObject[], s: PlanSettings, opts: ValidateO
   // 2. Furniture vs walls, door swings, aisles, room boundary.
   for (const f of furniture) {
     const poly = fp.get(f.id)!;
-    // Cubicle parts butt up against building walls, so an end touching a wall face is fine.
+    // Cube walls and phone booths are pushed right up against building walls, so tucking into a
+    // wall up to its centre line counts as standing against it, not as a conflict.
     const part = !!f.inventoryItem;
+    const flush = part || f.type === 'phone-booth';
     for (const w of walls) {
-      if (convexOverlapDepth(poly, wq.get(w.id)!) > (part ? 1.5 : 0.25)) push('error', 'wall', `${f.name} intersects a wall (${w.name}).`, [f.id, w.id]);
+      // For those, trim the footprint back by half the wall's thickness at its ends (both ways for a
+      // booth; along its length for a thin cube wall) before testing.
+      const tol = w.thickness / 2 + 0.5;
+      const test = flush ? footprint({ ...f, width: Math.max(1, f.width - 2 * tol), depth: part ? f.depth : Math.max(1, f.depth - 2 * tol) }) : poly;
+      if (convexOverlapDepth(test, wq.get(w.id)!) > 0.25) push('error', 'wall', `${f.name} intersects a wall (${w.name}).`, [f.id, w.id]);
     }
     for (const d of doors) {
       if (d.kind !== 'door') continue;
@@ -273,7 +279,7 @@ export function validate(objects: PlanObject[], s: PlanSettings, opts: ValidateO
     const room = containerRoom(objects, f);
     if (!room) {
       if (rooms.length) push('warning', 'outside', `${f.name} is not inside any room.`, [f.id]);
-    } else if (!part && !polygonContains(room.points, poly, 0.25)) {
+    } else if (!part && !(flush && room.roomType === 'cubicle-area') && !polygonContains(room.points, poly, 0.25)) {
       // (Cube walls may straddle room outlines; running into a real wall is caught above.)
       push('error', 'out-of-room', `${f.name} crosses the boundary of ${room.name}.`, [f.id, room.id]);
     }
