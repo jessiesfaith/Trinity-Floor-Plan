@@ -907,6 +907,29 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
               );
             })}
 
+          {/* Cubicle wall lengths: the width and depth along two sides of each cubicle */}
+          {visibleLayer('furniture') &&
+            settings.showGuides &&
+            furniture
+              .filter((f) => f.type === 'cubicle' && Math.min(f.width, f.depth) * view.k > 25)
+              .flatMap((f) => {
+                const c = footprint(f);
+                const fs = 7.5 * px;
+                return [0, 1].map((i) => {
+                  const a = c[i];
+                  const b = c[i + 1];
+                  const m = vscale(add(a, b), 0.5);
+                  let ang = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+                  if (ang > 90 || ang < -90) ang += 180;
+                  const out = sub(m, { x: f.x, y: f.y });
+                  const L = Math.hypot(out.x, out.y) || 1;
+                  const pos = add(m, vscale(out, (fs * 0.9) / L));
+                  return (
+                    <Text key={`cw-${f.id}-${i}`} x={pos.x} y={pos.y} rotation={ang} offsetX={40 * px} offsetY={fs / 2} width={80 * px} align="center" text={fmt(dist(a, b))} fontSize={fs} fill="#0b7f7c" listening={false} />
+                  );
+                });
+              })}
+
           {/* Room labels */}
           {visibleLayer('annotations') &&
             rooms.map((r) => {
@@ -1069,10 +1092,11 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
             );
           })()}
 
-          {/* Wall lengths (selected walls always; all walls when guides are on and zoomed in) */}
+          {/* Wall lengths (selected walls always; with guides on, every wall of 1 ft or more that is
+              long enough on screen to label, in both the 2D and presentation views) */}
           {visibleLayer('walls') &&
             walls
-              .filter((w) => selected.has(w.id) || (settings.showGuides && !pres && dist(w.a, w.b) * view.k > 90))
+              .filter((w) => selected.has(w.id) || (settings.showGuides && dist(w.a, w.b) >= 12 && dist(w.a, w.b) * view.k > 30))
               .map((w) => {
                 const m = vscale(add(w.a, w.b), 0.5);
                 let ang = (Math.atan2(w.b.y - w.a.y, w.b.x - w.a.x) * 180) / Math.PI;

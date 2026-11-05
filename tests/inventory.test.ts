@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createBlankProject, createSampleProject } from '@/lib/sampleProject';
-import { groupInventory, TRINITY_ADDRESS } from '@/lib/inventory';
+import { firstInventory, groupInventory, TRINITY_ADDRESS } from '@/lib/inventory';
 import { parseProject } from '@/lib/persistence';
 import { renderSvg } from '@/lib/svgRender';
 
@@ -14,16 +14,23 @@ describe('furniture inventory legend', () => {
     expect(qty('Short desks')).toBe(13);
     expect(qty('Corner desks')).toBe(8);
     expect(qty('Chairs', 'Conference room')).toBe(11);
-    expect(groupInventory(inv).map((g) => g.area)).toEqual([
-      'Cubicles',
-      'File cabinets (under desks)',
-      "Josh's office",
-      'Printer area',
-      'IT room',
-      'Kitchen',
-      'Conference room',
-      'Building',
-    ]);
+    expect(qty('Small file cabinets', 'Cubicles')).toBe(8);
+    expect(qty('Tall file cabinets', 'Offices')).toBe(2);
+    expect(qty('Tall file cabinets', 'Printer area')).toBe(3);
+    expect(qty('Dedicated tenant HVAC')).toBe(1);
+    expect(groupInventory(inv).map((g) => g.area)).toEqual(['Cubicles', 'Offices', 'Printer area', 'IT room', 'Kitchen', 'Conference room', 'Building']);
+  });
+
+  it('an unedited saved copy of the first list and header is updated; an edited one is kept', () => {
+    const old = createSampleProject();
+    old.address = '2350 Mission College Blvd, Suite 330';
+    old.inventory = firstInventory();
+    const loaded = parseProject(JSON.stringify(old));
+    expect(loaded.address).toBe(TRINITY_ADDRESS);
+    expect(loaded.inventory?.some((x) => x.area === "Josh's office")).toBe(false);
+    expect(loaded.inventory?.find((x) => x.area === 'Printer area')?.qty).toBe(3);
+    old.inventory[0].qty = 30; // edited
+    expect(parseProject(JSON.stringify(old)).inventory?.[0].qty).toBe(30);
   });
 
   it('an older saved Trinity plan gets the inventory and address; other plans do not', () => {
@@ -47,7 +54,7 @@ describe('furniture inventory legend', () => {
       view: '2d', showDimensions: true, showFurnitureLabels: true, showRoomAreas: true, showSeatCounts: true, showLegend: true,
       header: p.address, inventory: p.inventory,
     });
-    expect(svg).toContain('2350 Mission College Blvd, Suite 330');
+    expect(svg).toContain('2350 Mission College Blvd Suite 330');
     expect(svg).toContain('Furniture inventory');
     expect(svg).toContain('Long cubicle walls');
   });
