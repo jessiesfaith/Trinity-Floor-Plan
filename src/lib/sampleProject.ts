@@ -166,10 +166,11 @@ function buildSuite(): SuiteGeometry {
   const K1 = S(kR - (T_TOP - K2.y), T_TOP);
   const TL = S(0, T_TOP);
   const L = S(0, 0); // left corner on the window wall
-  // Corridor door bay between the kitchenette and Cubicle Area A (as traced).
-  const K3 = S(14.3, K2.y);
-  const N1 = S(17.8, K2.y - 2.8);
+  // Corridor door bay between the kitchenette and Cubicle Area A (on-site sketch): the door sits in a
+  // straight wall level with the kitchenette's corner, and a short jog joins it to the top wall.
+  const N1 = S(17.8, K2.y);
   const A1 = S(17.8, T_TOP);
+  const corrL = N1.x - K2.x; // door wall length (centerline)
   // IT / storage room (measured): 8'-6" along the top wall x 12'-0" deep, right after Area A's 16'.
   const stL = A1.x + ext + 16 + IW;
   const stR = stL + IW + 8.5 + IW;
@@ -216,15 +217,14 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(S2, S1, [], 'exterior'),
     ...wallFt(S1, A1, [], 'exterior'),
     ...wallFt(A1, N1, [], 'exterior'),
-    ...wallFt(N1, K3, [[0.74, 36]], 'exterior'), // second suite door (building corridor)
-    ...wallFt(K3, K2, [], 'exterior'),
+    ...wallFt(K2, N1, [[corrL - 1 / 3 - 3, 36]], 'exterior'), // second suite door (building corridor), by the jog
     ...wallFt(K2, K1, [], 'exterior'),
     ...wallFt(K1, TL, [], 'exterior'),
     ...wallFt(TL, S(0, kB), [], 'exterior'), // left wall beside the kitchenette
     ...wallFt(S(0, kB), L, [], 'exterior'), // left wall beside Cubicle Area B (22' clear)
     // IT / storage room (existing)
     ...wallFt(S(stL, stB), S(stL, T_TOP)),
-    ...wallFt(S(stL, stB), S(stR, stB), [[0.5, 36]]), // door in the bottom wall, hinged at the left corner
+    ...wallFt(S(stL, stB), S(stR, stB), [[stR - stL - 0.5 - 3, 36]]), // door in the bottom wall, hinged at the right corner
     ...wallFt(S(stR, stB), S(stR, T_TOP)),
     // Kitchenette
     ...wallFt(S(0, kB), S(kR, kB)),
@@ -232,7 +232,9 @@ function buildSuite(): SuiteGeometry {
     // Conference room (contractor)
     ...wallFt(S(confL, 0), S(confL, confT), [], 'interior', CONTRACTOR),
     ...wallFt(S(confL, confT), S(confR, confT), [[0.75, 36], [20.67, 36]], 'interior', CONTRACTOR),
-    ...wallFt(S(confR, confT), S(confR, 0), [], 'interior', CONTRACTOR),
+    // Split where Office 4's top wall meets it, so the Office 4 side reads 12' (the conference side's 14' is its dimension line).
+    ...wallFt(S(confR, confT), S(confR, o3T), [], 'interior', CONTRACTOR),
+    ...wallFt(S(confR, o3T), S(confR, 0), [], 'interior', CONTRACTOR),
     // Offices 2–4 (contractor)
     ...wallFt(S(confR, o3T), S(div43, o3T), [[0.4, 36]], 'interior', CONTRACTOR), // Office 4 top wall + door
     ...wallFt(S(div32, o3T), S(div43, o3T), [[0.3, 36]], 'interior', CONTRACTOR), // Office 3 top wall + door
@@ -240,8 +242,9 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(S(div32, o3T), S(div32, 0), [], 'interior', CONTRACTOR),
     ...wallFt(S(div32, o3T), o2T, [[0.5, 36]], 'interior', CONTRACTOR), // Office 2 top wall + door, out to the angled wall
     // Office 1 (contractor) — right triangle by the main entry
-    ...wallFt(o1a, E1, [[0.6, 36]], 'interior', CONTRACTOR),
-    ...wallFt(o1a, o1e, [], 'interior', CONTRACTOR),
+    // Labelled with the marked 13' x 12' (the drawing is not to scale here).
+    ...wallFt(o1a, E1, [[0.6, 36]], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "13'-0\"" })),
+    ...wallFt(o1a, o1e, [], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "12'-0\"" })),
   ];
 
   const R = (name: string, type: Room['roomType'], centerFt: Pt[], fill: string, extra: Partial<Room> = {}) =>
@@ -259,7 +262,7 @@ function buildSuite(): SuiteGeometry {
   const open = R(
     'Open Area',
     'open',
-    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2T, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K3, K2, S(kR, kB), S(0, kB)],
+    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2T, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K2, S(kR, kB), S(0, kB)],
     '#f5f8f7',
   );
   // Zones inside the open area (no walls of their own). Dimensions are clear floor.
@@ -267,34 +270,36 @@ function buildSuite(): SuiteGeometry {
   // starting right after the 5'-0" walkway above the conference room (2'-8" is left behind it).
   const aL = A1.x + ext;
   const aTop = walkT + 12;
-  const areaA = Z('Cubicle Area A', 'cubicle-area', [S(aL, aTop - 12), S(aL + 16, aTop - 12), S(aL + 16, aTop), S(aL, aTop)], '#e3f4f3', {
+  const areaA = Z('Area A', 'cubicle-area', [S(aL, aTop - 12), S(aL + 16, aTop - 12), S(aL + 16, aTop), S(aL, aTop)], '#e3f4f3', {
     planning: { widthFt: 12, lengthFt: 16, targetMin: 6, targetMax: 8, department: 'Inside Sales / Operations' },
     notes: '12 x 16 ft cube area marked on the plan ("12x16", 6–8 people), above the 5 ft walkway from the conference room.',
   });
   // Area B: 12' clear from the left wall to the conference wall, 22' deep up to the kitchenette wall.
-  const areaB = Z('Cubicle Area B', 'cubicle-area', [S(ext, ext), S(ext + 12, ext), S(ext + 12, ext + 22), S(ext, ext + 22)], '#e3f4f3', {
+  const areaB = Z('Area B', 'cubicle-area', [S(ext, ext), S(ext + 12, ext), S(ext + 12, ext + 22), S(ext, ext + 22)], '#e3f4f3', {
     planning: { widthFt: 12, lengthFt: 22, targetMin: 6, targetMax: 8, department: 'Team Workstations' },
     notes: '12 ft along the window wall (to the conference room) x 22 ft deep, up to the kitchenette wall ("22x12").',
   });
-  const kitchen = R('Kitchenette', 'kitchen', [S(0, kB), S(kR, kB), K2, K1, TL], '#fdf3e4');
+  const kitchen = R('Kitchen', 'kitchen', [S(0, kB), S(kR, kB), K2, K1, TL], '#fdf3e4');
   const walkway: PlanObject = {
     ...makeAisle(F(aL + 8, 0).x, F(0, (walkB + walkT) / 2).y, 16 * 12, 5 * 12),
     name: "Walkway (5')",
-    notes: '5 ft walkway from the conference room to Cubicle Area A.',
+    notes: '5 ft walkway from the conference room to Area A.',
   };
   for (const z of [areaA, areaB, kitchen]) z.label = { ...z.label, fontSize: 11, background: 'rgba(255,255,255,0.85)' };
   areaB.label.offset = { x: 14, y: -24 };
   conference.label.fontSize = 16;
+  conference.showArea = false;
   open.label.offset = { x: -60, y: 90 };
+  open.hideLabel = true;
   const rooms = [open, kitchen, areaA, areaB, storage, conference, office1, office2, office3, office4];
 
   // ---- Doors (positions/swings as drawn).
   const doors = [
     doorFt(E1, S2, 0.48, S(50, 25), 'Main entry (right leaf)'),
     doorFt(S2, E1, 0.48, S(47, 25), 'Main entry (left leaf)'),
-    doorFt(K3, N1, 0.74, S(18, T_TOP + 2), 'Suite door (corridor)'), // hinged on the kitchen side, swings out into the building corridor
-    doorFt(S(stL, stB), S(stR, stB), 0.5, S(38, 24), 'IT / Storage door'),
-    doorFt(S(kR, kB), K2, 1, S(5, 25), 'Kitchenette door'),
+    doorFt(N1, K2, 1 / 3, S(16, T_TOP + 2), 'Suite door (corridor)'), // hinged by the jog, swings out into the building corridor
+    doorFt(S(stR, stB), S(stL, stB), 0.5, S(40, 24), 'IT / Storage door'),
+    doorFt(S(kR, kB), K2, 1, S(5, 25), 'Kitchen door'),
     doorFt(S(confL, confT), S(confR, confT), 0.75, S(15, 8), 'Conference door 1', 36, CONTRACTOR),
     doorFt(S(confR, confT), S(confL, confT), 0.75, S(34, 8), 'Conference door 2', 36, CONTRACTOR),
     doorFt(S(confR, o3T), S(div43, o3T), 0.4, S(40, 5), 'Office 4 door', 36, CONTRACTOR),
@@ -313,7 +318,7 @@ function buildSuite(): SuiteGeometry {
     fx('storage-cab', 5.56, ext + 1, 'Dedicated tenant HVAC', { type: 'custom', width: 24, depth: 24, color: '#c9ced8', deskType: '', notes: 'Dedicated tenant HVAC unit' }),
     fx('storage-cab', 1.9, T_TOP - ext - 1, 'Sink', { width: 24, depth: 24, color: '#e3d5bf' }),
     fx('storage-cab', 6.6, T_TOP - ext - 1.25, 'Refrigerator', { width: 33.5, depth: 30, color: '#e3d5bf' }),
-    fx('shelving', 40.0, stB + 0.21 + 0.75, 'Shelving', { rotation: 180 }),
+    fx('shelving', stL + IW + 2.05, stB + 0.21 + 0.75, 'Shelving', { rotation: 180 }),
   ];
 
   // ---- Dimension lines for the marked dimensions.
@@ -322,13 +327,17 @@ function buildSuite(): SuiteGeometry {
     name,
     attach,
   });
+  // Offsets are the distance out from the room edge (inches). The long ones that sit against an
+  // outside wall are pulled outside the suite so they read clearly when the plan is shown.
+  const outside = 30; // past the window wall / left wall
+  const overTop = Math.round((T_TOP + ext - aTop) * 12 + 18); // from Area A's top edge to past the top wall
   const dims = [
-    dimFt(L, L, 'Conference length (24\')', -20, { roomId: conference.id, edgeIndex: 0 }),
+    dimFt(L, L, 'Conference length (24\')', outside, { roomId: conference.id, edgeIndex: 0 }),
     dimFt(L, L, 'Conference width (14\')', -20, { roomId: conference.id, edgeIndex: 1 }),
-    dimFt(L, L, 'Area A length (16\')', 20, { roomId: areaA.id, edgeIndex: 2 }),
+    dimFt(L, L, 'Area A length (16\')', overTop, { roomId: areaA.id, edgeIndex: 2 }),
     dimFt(L, L, 'Area A width (12\')', 20, { roomId: areaA.id, edgeIndex: 3 }),
-    dimFt(L, L, 'Area B length (12\')', -20, { roomId: areaB.id, edgeIndex: 0 }),
-    dimFt(L, L, 'Area B width (22\')', -20, { roomId: areaB.id, edgeIndex: 3 }),
+    dimFt(L, L, 'Area B length (12\')', outside, { roomId: areaB.id, edgeIndex: 0 }),
+    dimFt(L, L, 'Area B width (22\')', outside, { roomId: areaB.id, edgeIndex: 3 }),
   ];
   // Attached dimensions follow their room edge (see syncAttachedDimensions), so seed a/b from the edges.
   for (const d of dims) {
@@ -336,8 +345,14 @@ function buildSuite(): SuiteGeometry {
     const i = d.attach!.edgeIndex;
     d.a = r.points[i];
     d.b = r.points[(i + 1) % r.points.length];
+    // Point the pulled-out offsets away from their room (+ offsets sit on the perp(a->b) side).
+    if (Math.abs(d.offset) < outside) continue;
+    const n = perp(norm(sub(d.b, d.a)));
+    const c = { x: r.points.reduce((s, p) => s + p.x, 0) / r.points.length, y: r.points.reduce((s, p) => s + p.y, 0) / r.points.length };
+    const mid = scale(add(d.a, d.b), 0.5);
+    d.offset = ((mid.x - c.x) * n.x + (mid.y - c.y) * n.y > 0 ? 1 : -1) * Math.abs(d.offset);
   }
-  const street = makeLabel(F(41, -3).x, F(41, -3).y, 'JULIETTE LANE  (window wall)');
+  const street = makeLabel(F(41, -4.5).x, F(41, -4.5).y, 'JULIETTE LANE  (window wall)');
   street.style = { ...street.style, color: '#4a5670', fontSize: 12, fontWeight: 'bold' };
   street.name = 'Street label';
   const source = makeLabel(F(66, 34).x, F(66, 34).y, 'Traced from Floor_Plan.pdf (scale ±6"). Conference room and Offices 1–4 are contractor-fixed.');

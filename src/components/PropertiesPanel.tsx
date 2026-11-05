@@ -417,6 +417,9 @@ function RoomFields({ r }: { r: Room }) {
       <Row label="Fill">
         <Color value={r.fill} onChange={(v) => upd({ fill: v } as Partial<PlanObject>, `fill:${r.id}`)} />
       </Row>
+      <Row label="Show name">
+        <Switch checked={!r.hideLabel} label="" onChange={(v) => upd({ hideLabel: !v } as Partial<PlanObject>)} />
+      </Row>
       <Row label="Show area">
         <Switch checked={r.showArea} label="" onChange={(v) => upd({ showArea: v } as Partial<PlanObject>)} />
       </Row>
@@ -434,6 +437,9 @@ function WallFields({ w }: { w: Wall }) {
     <>
       <Row label="Length">
         <LengthInput disabled={w.locked} value={L} units={units} min={1} onCommit={(v) => upd({ b: add(w.a, scale(norm(sub(w.b, w.a)), v)) } as Partial<PlanObject>)} />
+      </Row>
+      <Row label="Label">
+        <Input value={w.lengthLabel ?? ''} placeholder="Measured length" onChange={(e) => upd({ lengthLabel: e.target.value || undefined } as Partial<PlanObject>, `wlabel:${w.id}`)} />
       </Row>
       <Row label="Thickness">
         <LengthInput disabled={w.locked} value={w.thickness} units={units} min={0.5} onCommit={(v) => upd({ thickness: v } as Partial<PlanObject>)} />

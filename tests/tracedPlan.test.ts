@@ -41,7 +41,7 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
   it('matches the on-site measurements along the window wall, left wall and top wall', () => {
     const w = (n: string) => bbox(room(n).points).width / 12;
     const h = (n: string) => bbox(room(n).points).height / 12;
-    expect(w('Cubicle Area B')).toBeCloseTo(12, 2);
+    expect(w('Area B')).toBeCloseTo(12, 2);
     expect(w('Office 4')).toBeCloseTo(12, 2);
     expect(w('Office 3')).toBeCloseTo(12, 2);
     expect(h('Office 4')).toBeCloseTo(12, 2);
@@ -51,31 +51,31 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     const bottom = Math.max(...o2.map((q) => q.y));
     const onWindow = o2.filter((q) => Math.abs(q.y - bottom) < 1e-6).map((q) => q.x);
     expect(Math.max(...onWindow) - Math.min(...onWindow)).toBeCloseTo(17, 2);
-    // Kitchenette: 10'-3" wide, 11'-8" deep along the left wall.
-    expect(w('Kitchenette')).toBeCloseTo(10.25, 2);
-    expect(h('Kitchenette')).toBeCloseTo(11 + 8 / 12, 2);
+    // Kitchen: 10'-3" wide, 11'-8" deep along the left wall.
+    expect(w('Kitchen')).toBeCloseTo(10.25, 2);
+    expect(h('Kitchen')).toBeCloseTo(11 + 8 / 12, 2);
     // IT / Storage: 8'-6" along the top wall x 12' deep.
     expect(w('IT / Storage')).toBeCloseTo(8.5, 2);
     expect(h('IT / Storage')).toBeCloseTo(12, 2);
   });
 
   it('cubicle areas match the marked 12 x 16 and 12 x 22 dimensions', () => {
-    expect(roomArea(room('Cubicle Area A')) / 144).toBeCloseTo(192, 1);
-    expect(roomArea(room('Cubicle Area B')) / 144).toBeCloseTo(264, 1);
+    expect(roomArea(room('Area A')) / 144).toBeCloseTo(192, 1);
+    expect(roomArea(room('Area B')) / 144).toBeCloseTo(264, 1);
   });
 
   it('has a 5 ft walkway from the conference room to Area A, and a walled kitchenette with a door', () => {
     const conf = bbox(room('Conference Room').points);
-    const a = bbox(room('Cubicle Area A').points);
+    const a = bbox(room('Area A').points);
     const confTopFace = conf.minY - 5; // the conference room's clear top edge, minus its 5" wall
     expect((confTopFace - a.maxY) / 12).toBeCloseTo(5, 2);
     const walk = objs.find((o) => o.kind === 'aisle' && o.name === "Walkway (5')");
     expect(walk && walk.kind === 'aisle' && walk.depth / 12).toBeCloseTo(5, 2);
     // Area B runs up to the kitchenette wall: its top edge is the wall's 5" away from the kitchen floor.
-    const b = bbox(room('Cubicle Area B').points);
-    const k = bbox(room('Kitchenette').points);
+    const b = bbox(room('Area B').points);
+    const k = bbox(room('Kitchen').points);
     expect((b.minY - k.maxY) / 12).toBeCloseTo(5 / 12, 2);
-    expect(objs.some((o) => o.kind === 'door' && o.name === 'Kitchenette door')).toBe(true);
+    expect(objs.some((o) => o.kind === 'door' && o.name === 'Kitchen door')).toBe(true);
   });
 
   it('starter layouts are the plan as drawn: no generated workstations, no conflicts', () => {

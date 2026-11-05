@@ -224,6 +224,7 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
   }
   if (visible(opts.layers, 'annotations')) {
     for (const r of rooms) {
+      if (r.hideLabel) continue;
       const c = add(centroid(r.points), r.label.offset);
       const fs = r.label.fontSize;
       const wsCount = opts.showSeatCounts

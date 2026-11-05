@@ -17,7 +17,7 @@ import type { ValidationResult } from '@/lib/validation';
 import { drawFurniture } from './drawFurniture';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize, Minus, Plus, RotateCcw, RotateCw } from 'lucide-react';
 import { faceObjects, facingOf, rotateObjects, type Facing } from '@/lib/orientation';
-import { wallInsideLength } from '@/lib/wallLength';
+import { wallInsideLength, wallRuns } from '@/lib/wallLength';
 
 const TEAL = '#0f9d9a';
 const RED = '#d62828';
@@ -595,6 +595,8 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
     const ws = objects.filter((o): o is Wall => o.kind === 'wall');
     return new Map(ws.map((w) => [w.id, wallInsideLength(w, ws)]));
   }, [objects]);
+  // Corner-to-corner runs (a wall split by door openings reads as one length).
+  const runs = useMemo(() => wallRuns(objects.filter((o): o is Wall => o.kind === 'wall')), [objects]);
   const doors = objects.filter((o): o is Door => o.kind === 'door');
   const furniture = objects.filter((o): o is Furniture => o.kind === 'furniture');
   const labels = objects.filter((o): o is TextLabel => o.kind === 'label');
@@ -930,9 +932,9 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
                 });
               })}
 
-          {/* Room labels */}
+          {/* Room labels (a hidden label still shows while its room is selected) */}
           {visibleLayer('annotations') &&
-            rooms.map((r) => {
+            rooms.filter((r) => !r.hideLabel || selected.has(r.id)).map((r) => {
               const c = add(centroid(r.points), r.label.offset);
               const fs = r.label.fontSize * (pres ? 1.15 : 1);
               const sub2 = r.showArea ? formatArea(roomArea(r), settings.units) : '';
@@ -1092,23 +1094,26 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
             );
           })()}
 
-          {/* Wall lengths (selected walls always; with guides on, every wall of 1 ft or more that is
-              long enough on screen to label, in both the 2D and presentation views) */}
+          {/* Wall lengths. With guides on, every wall run of 1 ft or more that is long enough on screen
+              is labelled corner to corner (door openings included), in both the 2D and presentation
+              views. A selected wall piece shows its own length instead. */}
           {visibleLayer('walls') &&
-            walls
-              .filter((w) => selected.has(w.id) || (settings.showGuides && dist(w.a, w.b) >= 12 && dist(w.a, w.b) * view.k > 30))
-              .map((w) => {
-                const m = vscale(add(w.a, w.b), 0.5);
-                let ang = (Math.atan2(w.b.y - w.a.y, w.b.x - w.a.x) * 180) / Math.PI;
-                if (ang > 90 || ang < -90) ang += 180;
-                const sel = selected.has(w.id);
-                const fs = (sel ? 11 : 8.5) * px;
-                const n = rotatePt({ x: 0, y: -1 }, ang);
-                const pos = add(m, vscale(n, w.thickness / 2 + fs * 0.4));
-                return (
-                  <Text key={`wl-${w.id}`} x={pos.x} y={pos.y} rotation={ang} offsetX={60 * px} offsetY={fs} width={120 * px} align="center" text={fmt(wallInside.get(w.id) ?? dist(w.a, w.b))} fontSize={fs} fill={sel ? RED : '#c04848'} fontStyle={sel ? 'bold' : 'normal'} listening={false} />
-                );
-              })}
+            [
+              ...runs
+                .filter((r) => !r.ids.some((id) => selected.has(id)) && settings.showGuides && dist(r.a, r.b) >= 12 && dist(r.a, r.b) * view.k > 30)
+                .map((r) => ({ key: `wr-${r.ids[0]}`, a: r.a, b: r.b, thickness: r.thickness, len: r.inside, text: walls.find((w) => r.ids.includes(w.id) && w.lengthLabel?.trim())?.lengthLabel, sel: false })),
+              ...walls.filter((w) => selected.has(w.id)).map((w) => ({ key: `wl-${w.id}`, a: w.a, b: w.b, thickness: w.thickness, len: wallInside.get(w.id) ?? dist(w.a, w.b), text: undefined as string | undefined, sel: true })),
+            ].map((w) => {
+              const m = vscale(add(w.a, w.b), 0.5);
+              let ang = (Math.atan2(w.b.y - w.a.y, w.b.x - w.a.x) * 180) / Math.PI;
+              if (ang > 90 || ang < -90) ang += 180;
+              const fs = (w.sel ? 11 : 8.5) * px;
+              const n = rotatePt({ x: 0, y: -1 }, ang);
+              const pos = add(m, vscale(n, w.thickness / 2 + fs * 0.4));
+              return (
+                <Text key={w.key} x={pos.x} y={pos.y} rotation={ang} offsetX={60 * px} offsetY={fs} width={120 * px} align="center" text={w.text?.trim() || fmt(w.len)} fontSize={fs} fill={w.sel ? RED : '#c04848'} fontStyle={w.sel ? 'bold' : 'normal'} listening={false} />
+              );
+            })}
 
           {/* Vertex handles for selected room / wall / dimension / label callout */}
           {tool === 'select' &&

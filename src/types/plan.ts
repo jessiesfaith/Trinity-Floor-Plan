@@ -64,6 +64,8 @@ export interface Room extends BaseObject {
   stroke: string;
   label: LabelStyle;
   showArea: boolean;
+  /** Hide the room's name label (and area) on the plan. */
+  hideLabel?: boolean;
   /** Preliminary planning inputs, not verified measurements. */
   planning?: {
     widthFt?: number;
@@ -83,6 +85,8 @@ export interface Wall extends BaseObject {
   thickness: number;
   color: string;
   wallType: 'exterior' | 'interior' | 'partition';
+  /** Text shown instead of the measured length (e.g. a marked size when the drawing is not to scale). */
+  lengthLabel?: string;
 }
 
 export interface Door extends BaseObject {

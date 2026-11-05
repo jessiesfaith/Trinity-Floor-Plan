@@ -23,8 +23,8 @@ export function CapacityDashboard({ cap }: { cap: CapacitySummary }) {
   const A = areas[0];
   const B = areas[1];
   const plannedRows: [string, string, string][] = [
-    ['Cubicle Area A', A?.plannedAreaSqft ? `${A.plannedAreaSqft} sq ft` : '—', A ? `${A.areaSqft.toFixed(0)} sq ft` : '—'],
-    ['Cubicle Area B', B?.plannedAreaSqft ? `${B.plannedAreaSqft} sq ft` : '—', B ? `${B.areaSqft.toFixed(0)} sq ft` : '—'],
+    ['Area A', A?.plannedAreaSqft ? `${A.plannedAreaSqft} sq ft` : '—', A ? `${A.areaSqft.toFixed(0)} sq ft` : '—'],
+    ['Area B', B?.plannedAreaSqft ? `${B.plannedAreaSqft} sq ft` : '—', B ? `${B.areaSqft.toFixed(0)} sq ft` : '—'],
     ['Combined Area', A?.plannedAreaSqft && B?.plannedAreaSqft ? `${A.plannedAreaSqft + B.plannedAreaSqft} sq ft` : '—', A && B ? `${(A.areaSqft + B.areaSqft).toFixed(0)} sq ft` : '—'],
     ['Target Area A', A?.targetMin ? `${A.targetMin}–${A.targetMax} people` : '—', A ? `${A.feasibleSeats} feasible seats` : '—'],
     ['Target Area B', B?.targetMin ? `${B.targetMin}–${B.targetMax} people` : '—', B ? `${B.feasibleSeats} feasible seats` : '—'],
