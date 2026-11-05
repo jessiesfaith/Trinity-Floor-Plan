@@ -31,6 +31,7 @@ export function furnitureFromTemplate(t: FurnitureTemplate, x: number, y: number
     deskType: t.deskType,
     equipment: [],
     overlapsAllowed: t.overlapsAllowed,
+    ...(t.inventoryItem ? { inventoryItem: t.inventoryItem } : {}),
     locked: false,
     notes: '',
   };

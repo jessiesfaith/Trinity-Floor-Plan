@@ -4,9 +4,11 @@
 // current furniture inventory (editable).
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, Check } from 'lucide-react';
-import type { InventoryItem } from '@/types/plan';
-import { usePlanStore } from '@/store/usePlanStore';
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, Check, Blocks } from 'lucide-react';
+import type { InventoryItem, Scenario } from '@/types/plan';
+import { activeScenario, usePlanStore } from '@/store/usePlanStore';
+import { explodeCubicles, inventoryKey, usedByItem } from '@/lib/cubicleParts';
+import { uid } from '@/lib/objects';
 import { blankInventoryItem, groupInventory } from '@/lib/inventory';
 
 const st = usePlanStore.getState;
@@ -27,7 +29,22 @@ export function InventoryLegend() {
   const shown = usePlanStore((s) => s.project.showInventory !== false);
   const [open, setOpen] = useState(() => typeof window === 'undefined' || window.innerWidth >= 1024);
   const [editing, setEditing] = useState(false);
+  const objects = usePlanStore((s) => activeScenario(s.project).objects);
   if (!items || !shown) return null;
+  const used = usedByItem(objects);
+  const cubicleCount = objects.filter((o) => o.kind === 'furniture' && o.type === 'cubicle').length;
+
+  // Copy this layout into a new layout tab with every cubicle broken into its parts.
+  const makePartsLayout = () => {
+    const p = st().project;
+    const src = activeScenario(p);
+    const r = explodeCubicles(src.objects, p.inventory);
+    if (!window.confirm(`Make a new layout tab with these ${r.cubicles} cubicles broken into walls, desks, shelves and file cabinets? This layout stays as it is.`)) return;
+    const now = new Date().toISOString();
+    const copy: Scenario = { ...structuredClone(src), id: uid('s'), name: `${src.name} — cubicle parts`, description: 'Cubicles broken into their parts, to check against the inventory.', objects: r.objects, revision: 1, createdAt: now, updatedAt: now };
+    st().commit((q) => ({ ...q, scenarios: [...q.scenarios, copy], activeScenarioId: copy.id }));
+    st().select([]);
+  };
 
   const setItems = (fn: (xs: InventoryItem[]) => InventoryItem[], key?: string) =>
     st().commit((p) => ({ ...p, inventory: fn(p.inventory ?? []) }), key);
@@ -61,6 +78,12 @@ export function InventoryLegend() {
               />
             </label>
           )}
+          {!editing && cubicleCount > 0 && (
+            <button className="mb-2 flex w-full items-center justify-center gap-1 rounded border border-teal-600 px-2 py-1 font-semibold text-teal-700 hover:bg-teal-50" onClick={makePartsLayout}>
+              <Blocks className="h-3.5 w-3.5" /> Break {cubicleCount} cubicles into parts (new layout)
+            </button>
+          )}
+          {!editing && used.size > 0 && <div className="mb-1 text-[10px] text-slate-500">Placed in this layout / owned shown on the right.</div>}
           {groupInventory(items).map((g) => (
             <div key={g.area} className="mb-2">
               <div className="mb-0.5 border-b border-slate-100 text-[10px] font-semibold uppercase tracking-wide text-teal-700">{g.area}</div>
@@ -93,6 +116,11 @@ export function InventoryLegend() {
                     <span className="w-6 shrink-0 text-right font-semibold tabular-nums text-navy">{x.qty ?? '?'}</span>
                     <span className="flex-1">{x.item}</span>
                     {x.size && <span className="text-right text-slate-500">{x.size}</span>}
+                    {used.has(inventoryKey(x)) && (
+                      <span className={`shrink-0 rounded px-1 font-semibold tabular-nums ${used.get(inventoryKey(x))! > (x.qty ?? 0) ? 'bg-red-100 text-red-700' : 'bg-teal-50 text-teal-700'}`} title="Placed in this layout / owned">
+                        {used.get(inventoryKey(x))}/{x.qty ?? '?'}
+                      </span>
+                    )}
                   </div>
                 ),
               )}

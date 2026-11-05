@@ -257,8 +257,10 @@ export function validate(objects: PlanObject[], s: PlanSettings, opts: ValidateO
   // 2. Furniture vs walls, door swings, aisles, room boundary.
   for (const f of furniture) {
     const poly = fp.get(f.id)!;
+    // Cubicle parts butt up against building walls, so an end touching a wall face is fine.
+    const part = !!f.inventoryItem;
     for (const w of walls) {
-      if (convexOverlapDepth(poly, wq.get(w.id)!) > 0.25) push('error', 'wall', `${f.name} intersects a wall (${w.name}).`, [f.id, w.id]);
+      if (convexOverlapDepth(poly, wq.get(w.id)!) > (part ? 1.5 : 0.25)) push('error', 'wall', `${f.name} intersects a wall (${w.name}).`, [f.id, w.id]);
     }
     for (const d of doors) {
       if (d.kind !== 'door') continue;
@@ -271,7 +273,7 @@ export function validate(objects: PlanObject[], s: PlanSettings, opts: ValidateO
     const room = containerRoom(objects, f);
     if (!room) {
       if (rooms.length) push('warning', 'outside', `${f.name} is not inside any room.`, [f.id]);
-    } else if (!polygonContains(room.points, poly, 0.25)) {
+    } else if (!(part && room.roomType === 'cubicle-area') && !polygonContains(room.points, poly, part ? 1.5 : 0.25)) {
       push('error', 'out-of-room', `${f.name} crosses the boundary of ${room.name}.`, [f.id, room.id]);
     }
   }

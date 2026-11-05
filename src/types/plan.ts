@@ -150,6 +150,8 @@ export interface Furniture extends BaseObject {
   equipment: string[];
   /** Exempt from furniture-furniture collision (e.g. chairs tucked under desks). */
   overlapsAllowed?: boolean;
+  /** Inventory line this piece draws from, as "Area|Item" (e.g. "Cubicles|Long cubicle walls"). */
+  inventoryItem?: string;
 }
 
 export interface TextLabel extends BaseObject {
@@ -244,7 +246,7 @@ export interface PlanSettings {
 export interface FurnitureTemplate {
   id: string;
   label: string;
-  category: 'Workstations' | 'Seating' | 'Tables' | 'Storage' | 'Equipment' | 'Architecture' | 'Decor' | 'Custom';
+  category: 'Workstations' | 'Cubicle parts' | 'Seating' | 'Tables' | 'Storage' | 'Equipment' | 'Architecture' | 'Decor' | 'Custom';
   type: FurnitureType;
   width: number;
   depth: number;
@@ -255,6 +257,8 @@ export interface FurnitureTemplate {
   partitionHeight?: number;
   deskType: string;
   overlapsAllowed?: boolean;
+  /** Inventory line ("Area|Item") that pieces made from this template count against. */
+  inventoryItem?: string;
   builtIn: boolean;
 }
 
