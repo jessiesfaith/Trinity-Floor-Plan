@@ -25,6 +25,12 @@ export const PART = {
 /** Inventory key of an item, as used by templates and placed parts. */
 export const inventoryKey = (it: Pick<InventoryItem, 'area' | 'item'>) => `${it.area.trim()}|${it.item.trim()}`;
 
+/** True for a placed cubicle wall (as opposed to a desk, shelf or cabinet). */
+export const isCubicleWall = (o: PlanObject) => o.kind === 'furniture' && !!o.inventoryItem && o.type === 'partition';
+
+/** Desks, shelves and file cabinets placed as cubicle parts. */
+export const isCubicleFurniture = (o: PlanObject) => o.kind === 'furniture' && !!o.inventoryItem && o.type !== 'partition';
+
 /** How many of each inventory line the given objects use. */
 export function usedByItem(objects: PlanObject[]): Map<string, number> {
   const m = new Map<string, number>();
@@ -151,7 +157,7 @@ export interface PartsResult {
  * first (4' x 4' cubicles get them first), then two long desks, then short desks; 6' sides are
  * filled out with short desks. One hanging shelf and one file cabinet per cubicle while they last.
  */
-export function explodeCubicles(objects: PlanObject[], inventory: InventoryItem[] = []): PartsResult {
+export function explodeCubicles(objects: PlanObject[], inventory: InventoryItem[] = [], opts: { furniture?: boolean } = {}): PartsResult {
   const cubicles = objects.filter((o): o is Furniture => o.kind === 'furniture' && o.type === 'cubicle');
   const walls = objects.filter((o): o is Wall => o.kind === 'wall');
   const owned = new Map(inventory.map((x) => [inventoryKey(x), x.qty ?? 0]));
@@ -187,7 +193,7 @@ export function explodeCubicles(objects: PlanObject[], inventory: InventoryItem[
   }
 
   // Desks, shelves, cabinets (4' x 4' cubicles first: a corner desk fits them exactly).
-  const order = [...cubicles].sort((a, b) => a.width * a.depth - b.width * b.depth);
+  const order = opts.furniture === false ? [] : [...cubicles].sort((a, b) => a.width * a.depth - b.width * b.depth);
   for (const f of order) {
     const hw = f.width / 2;
     const hd = f.depth / 2;

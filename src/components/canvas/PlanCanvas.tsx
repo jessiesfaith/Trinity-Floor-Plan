@@ -870,7 +870,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
             furniture.map((f) => {
               const conflict = validation.conflictIds.has(f.id);
               const sel = selected.has(f.id);
-              const showText = !pres && f.type !== 'chair' && f.width * view.k > 40;
+              const showText = !pres && f.type !== 'chair' && !f.inventoryItem && f.width * view.k > 40;
               const who = f.assignedTo.filter(Boolean).join(', ');
               return (
                 <Group
@@ -919,6 +919,20 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
                 </Group>
               );
             })}
+
+          {/* Cubicle wall pieces: their length, small, beside each one */}
+          {visibleLayer('furniture') &&
+            furniture
+              .filter((f) => f.type === 'partition' && f.inventoryItem && f.width * view.k > 22)
+              .map((f) => {
+                let ang = f.rotation % 360;
+                if (ang > 90 && ang <= 270) ang -= 180;
+                else if (ang < -90) ang += 180;
+                const fs = 7 * px;
+                const n = rotatePt({ x: 0, y: -1 }, ang);
+                const pos = add({ x: f.x, y: f.y }, vscale(n, f.depth / 2 + fs * 0.9));
+                return <Text key={`pw-${f.id}`} x={pos.x} y={pos.y} rotation={ang} offsetX={30 * px} offsetY={fs / 2} width={60 * px} align="center" text={fmt(f.width)} fontSize={fs} fill="#0b7f7c" listening={false} />;
+              })}
 
           {/* Cubicle and phone booth wall lengths: the width and depth along two sides of each */}
           {visibleLayer('furniture') &&

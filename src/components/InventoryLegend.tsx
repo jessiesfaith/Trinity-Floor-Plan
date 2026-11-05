@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, Check, Blocks } from 'lucide-react';
 import type { InventoryItem, Scenario } from '@/types/plan';
 import { activeScenario, usePlanStore } from '@/store/usePlanStore';
-import { explodeCubicles, inventoryKey, usedByItem } from '@/lib/cubicleParts';
+import { explodeCubicles, inventoryKey, isCubicleFurniture, usedByItem } from '@/lib/cubicleParts';
 import { uid } from '@/lib/objects';
 import { blankInventoryItem, groupInventory } from '@/lib/inventory';
 
@@ -33,15 +33,21 @@ export function InventoryLegend() {
   if (!items || !shown) return null;
   const used = usedByItem(objects);
   const cubicleCount = objects.filter((o) => o.kind === 'furniture' && o.type === 'cubicle').length;
+  const partFurniture = objects.filter(isCubicleFurniture).length;
+  const removePartFurniture = () => {
+    if (!window.confirm(`Remove the ${partFurniture} desks, shelves and file cabinets from this layout and keep only the cubicle walls?`)) return;
+    st().setObjects((objs) => objs.filter((o) => !isCubicleFurniture(o)));
+    st().select([]);
+  };
 
   // Copy this layout into a new layout tab with every cubicle broken into its parts.
   const makePartsLayout = () => {
     const p = st().project;
     const src = activeScenario(p);
-    const r = explodeCubicles(src.objects, p.inventory);
-    if (!window.confirm(`Make a new layout tab with these ${r.cubicles} cubicles broken into walls, desks, shelves and file cabinets? This layout stays as it is.`)) return;
+    const r = explodeCubicles(src.objects, p.inventory, { furniture: false });
+    if (!window.confirm(`Make a new layout tab with these ${r.cubicles} cubicles broken into their cubicle walls (4' and 2' pieces, no furniture yet)? This layout stays as it is.`)) return;
     const now = new Date().toISOString();
-    const copy: Scenario = { ...structuredClone(src), id: uid('s'), name: `${src.name} — cubicle parts`, description: 'Cubicles broken into their parts, to check against the inventory.', objects: r.objects, revision: 1, createdAt: now, updatedAt: now };
+    const copy: Scenario = { ...structuredClone(src), id: uid('s'), name: `${src.name} — cubicle walls`, description: 'Cubicles broken into their cubicle walls, to check against the inventory.', objects: r.objects, revision: 1, createdAt: now, updatedAt: now };
     st().commit((q) => ({ ...q, scenarios: [...q.scenarios, copy], activeScenarioId: copy.id }));
     st().select([]);
   };
@@ -80,7 +86,12 @@ export function InventoryLegend() {
           )}
           {!editing && cubicleCount > 0 && (
             <button className="mb-2 flex w-full items-center justify-center gap-1 rounded border border-teal-600 px-2 py-1 font-semibold text-teal-700 hover:bg-teal-50" onClick={makePartsLayout}>
-              <Blocks className="h-3.5 w-3.5" /> Break {cubicleCount} cubicles into parts (new layout)
+              <Blocks className="h-3.5 w-3.5" /> Break {cubicleCount} cubicles into walls (new layout)
+            </button>
+          )}
+          {!editing && partFurniture > 0 && (
+            <button className="mb-2 flex w-full items-center justify-center gap-1 rounded border border-slate-300 px-2 py-1 text-slate-700 hover:bg-slate-50" onClick={removePartFurniture}>
+              <Trash2 className="h-3.5 w-3.5" /> Show cubicle walls only (remove {partFurniture} desks, shelves, cabinets)
             </button>
           )}
           {!editing && used.size > 0 && <div className="mb-1 text-[10px] text-slate-500">Placed in this layout / owned shown on the right.</div>}

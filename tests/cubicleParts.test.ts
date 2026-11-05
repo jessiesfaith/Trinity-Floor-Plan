@@ -39,6 +39,13 @@ describe('cubicle parts', () => {
     expect(used.get(key('Long cubicle walls'))).toBeGreaterThan(0);
   });
 
+  it('can lay the cubicle walls only, with no furniture', () => {
+    const p = createSampleProject();
+    const { objects, used } = explodeCubicles([place(48, 72, 0, 0, 0, 'C'), place(72, 48, 200, 0, 0, 'D')], p.inventory, { furniture: false });
+    expect([...used.keys()].every((k) => k.includes('cubicle walls'))).toBe(true);
+    expect(objects.every((o) => o.kind === 'furniture' && o.type === 'partition')).toBe(true);
+  });
+
   it('uses two long desks once the corner desks run out', () => {
     const p = createSampleProject();
     const inv = p.inventory!.map((x) => (x.item === 'Corner desks' ? { ...x, qty: 0 } : x));
