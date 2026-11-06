@@ -158,8 +158,8 @@ export function WallCountBox() {
   const placed = (key: string) => walls.objects.filter((o) => o.kind === 'furniture' && o.inventoryItem === key).length;
   const owned = (key: string) => project.inventory?.find((x) => inventoryKey(x) === key)?.qty ?? null;
   const rows = [
-    { label: "Long walls (4')", color: LONG_WALL_COLOR, used: placed(LONG_WALL), have: owned(LONG_WALL) },
-    { label: "Short walls (2')", color: SHORT_WALL_COLOR, used: placed(SHORT_WALL), have: owned(SHORT_WALL) },
+    { key: LONG_WALL, short: 'long walls', label: "Long walls (4')", color: LONG_WALL_COLOR, used: placed(LONG_WALL), have: owned(LONG_WALL) },
+    { key: SHORT_WALL, short: 'short walls', label: "Short walls (2')", color: SHORT_WALL_COLOR, used: placed(SHORT_WALL), have: owned(SHORT_WALL) },
   ];
   return (
     <div className="absolute left-2 top-12 z-10 w-60 rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-xs shadow-lg backdrop-blur">
@@ -187,6 +187,22 @@ export function WallCountBox() {
         })}
       </div>
       {rows.some((r) => r.have != null && r.used > r.have) && <div className="mt-1.5 text-[10px] font-semibold text-red-700">More walls placed than the office has.</div>}
+      <div className="mt-2 flex gap-1.5 border-t border-slate-100 pt-1.5">
+        {rows.map((r) => (
+          <button
+            key={r.key}
+            disabled={!r.used}
+            className="flex flex-1 items-center justify-center gap-1 rounded border border-slate-300 px-1 py-0.5 text-[10px] text-slate-700 hover:border-red-300 hover:text-red-700 disabled:opacity-40"
+            onClick={() => {
+              if (!window.confirm(`Delete all ${r.used} ${r.short} from this tab? (Ctrl+Z undoes it.)`)) return;
+              st().setObjects((objs) => objs.filter((o) => !(o.kind === 'furniture' && o.inventoryItem === r.key)));
+              st().select([]);
+            }}
+          >
+            <Trash2 className="h-3 w-3" /> Delete all {r.short}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
