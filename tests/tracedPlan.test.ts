@@ -28,12 +28,12 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     expect(b.height / 12).toBeCloseTo(14, 2);
   });
 
-  it('Office 1 is a clear right triangle with its door wall (13 ft measured + 3 ft pushed out) running straight up to the main entry', () => {
+  it('Office 1 is a clear right triangle with its door wall (13 ft measured + 2 ft pushed out) running straight up to the main entry', () => {
     const r = room('Office 1');
     const pts = r.points.map((q) => ({ x: q.x / 12, y: q.y / 12 }));
     expect(pts).toHaveLength(3);
     const b = bbox(pts);
-    expect(b.height).toBeCloseTo(16, 2); // door wall (runs across the suite)
+    expect(b.height).toBeCloseTo(15, 2); // door wall (runs across the suite)
     expect(pts.some((q) => Math.abs(q.x - b.minX) < 1e-6 && Math.abs(q.y - b.maxY) < 1e-6)).toBe(true); // right angle
     expect(objs.some((o) => o.kind === 'door' && o.name === 'Office 1 door')).toBe(true);
   });

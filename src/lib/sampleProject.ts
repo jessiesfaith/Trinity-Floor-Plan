@@ -200,10 +200,10 @@ function buildSuite(): SuiteGeometry {
   const r = Math.hypot(1, m);
   const B = S(o2In + (ext + ext * r) / m, 0); // far tip where the angled wall meets the window wall
   // Office 1: right triangle by the main entry. Measured 13'-0" clear along its door wall, then the
-  // bottom wall was pushed 3'-0" further toward the window wall (Nov 2026 decision); labelled 15' x 12'.
+  // bottom wall was pushed 2'-0" further toward the window wall (Nov 2026 decision); labelled 14' x 12'.
   // The door wall runs straight up to E1; the bottom wall runs level to the angled wall.
   const o1Top = ext + (o2In - (E1.x + IW)) * m; // inside top corner, on the angled wall
-  const o1a = S(E1.x, o1Top - 13 - 3 - IW); // the right-angle corner
+  const o1a = S(E1.x, o1Top - 13 - 2 - IW); // the right-angle corner
   const o1e = S(o2In - (o1a.y - ext - ext * r) / m, o1a.y); // where its bottom wall meets the angled wall
   // Offices 2, 3 and 4 (measured): 12'-0" deep. Their top wall is one straight line that runs
   // from the conference room out to the angled wall; Office 2's door is in it.
@@ -247,7 +247,7 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(S(div32, o3T), o2T, [[0.5, 36]], 'interior', CONTRACTOR), // Office 2 top wall + door, out to the angled wall
     // Office 1 (contractor) — right triangle by the main entry
     // Labelled with the marked 13' x 12' (the drawing is not to scale here).
-    ...wallFt(o1a, E1, [[0.6, 36]], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "15'-0\"" })),
+    ...wallFt(o1a, E1, [[0.6, 36]], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "14'-0\"" })),
     ...wallFt(o1a, o1e, [], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "12'-0\"" })),
   ];
 
