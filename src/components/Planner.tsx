@@ -18,7 +18,7 @@ import Toolbar from './Toolbar';
 import LeftSidebar from './LeftSidebar';
 import PropertiesPanel from './PropertiesPanel';
 import PlanCanvas from './canvas/PlanCanvas';
-import { InventoryLegend, PlanHeader, WallCountBox } from './InventoryLegend';
+import { CubicleCountBox, InventoryLegend, PlanHeader, WallCountBox } from './InventoryLegend';
 import { CapacityDashboard, WarningsList } from './Dashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import GenerateDialog from './dialogs/GenerateDialog';
@@ -271,6 +271,7 @@ export default function Planner() {
             <PlanCanvas validation={validation} onDropTemplate={onDropTemplate} registerViewCenter={(fn) => (viewCenter.current = fn)} />
             <PlanHeader />
             <WallCountBox />
+            <CubicleCountBox />
             <InventoryLegend />
           </div>
         </main>

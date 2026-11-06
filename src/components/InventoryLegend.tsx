@@ -5,7 +5,8 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, Check, Blocks } from 'lucide-react';
-import type { InventoryItem } from '@/types/plan';
+import type { Furniture, InventoryItem, Room } from '@/types/plan';
+import { roomAt } from '@/lib/objects';
 import { activeScenario, usePlanStore } from '@/store/usePlanStore';
 import { inventoryKey, isCubicleFurniture, LONG_WALL, LONG_WALL_COLOR, SHORT_WALL, SHORT_WALL_COLOR, usedByItem } from '@/lib/cubicleParts';
 import { floorPlanLayoutOf, hiddenCubeWalls, isWallsLayout, rebuildCubicleWalls } from '@/lib/wallsLayout';
@@ -151,6 +152,7 @@ export function InventoryLegend() {
 /** Cubicle walls tab: how many cubicles, and long / short cube walls placed against what the office owns. */
 export function WallCountBox() {
   const project = usePlanStore((s) => s.project);
+  const [folded, setFolded] = useState(false);
   const walls = activeScenario(project);
   if (!isWallsLayout(walls)) return null;
   const plan = floorPlanLayoutOf(project);
@@ -165,8 +167,13 @@ export function WallCountBox() {
     { key: SHORT_WALL, short: 'short walls', label: "Short walls (2')", color: SHORT_WALL_COLOR, used: placed(SHORT_WALL), have: owned(SHORT_WALL) },
   ];
   return (
-    <div className="absolute left-2 top-12 z-10 w-60 rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-xs shadow-lg backdrop-blur">
-      <div className="mb-1 font-semibold text-navy">Cube wall count</div>
+    <div className="absolute bottom-16 left-2 z-10 w-60 rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-xs shadow-lg backdrop-blur">
+      <button className="mb-1 flex w-full items-center gap-1 text-left font-semibold text-navy" onClick={() => setFolded((f) => !f)} aria-expanded={!folded}>
+        {folded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        Cube wall count
+        {folded && <span className="ml-auto font-normal tabular-nums text-slate-600">{rows[0].used}/{rows[0].have ?? '?'} · {rows[1].used}/{rows[1].have ?? '?'}</span>}
+      </button>
+      {!folded && <>
       <div className="mb-1.5 flex justify-between border-b border-slate-100 pb-1">
         <span>Cubicles (floor plan)</span>
         <span className="font-semibold tabular-nums text-navy">{cubicles}</span>
@@ -192,11 +199,11 @@ export function WallCountBox() {
       {rows.some((r) => r.have != null && r.used > r.have) && <div className="mt-1.5 text-[10px] font-semibold text-red-700">More walls placed than the office has.</div>}
       {hidden.length > 0 && (
         <div className="mt-1.5 rounded bg-amber-50 px-1.5 py-1 text-[10px] text-amber-800">
-          <b>{hidden.length}</b> of these ({hiddenLong} long, {hiddenShort} short) sit outside Area A and Area B, so they are hidden here but still counted.
+          <b>{hidden.length}</b> of these ({hiddenLong} long, {hiddenShort} short) sit outside the sections shown here (Area A, Area B, Office 1, Kitchen), so they are hidden but still counted.
           <button
             className="mt-1 flex w-full items-center justify-center gap-1 rounded border border-amber-300 bg-white px-1 py-0.5 font-semibold text-amber-800 hover:bg-amber-100"
             onClick={() => {
-              if (!window.confirm(`Delete the ${hidden.length} hidden cube walls outside Area A and Area B? (Ctrl+Z undoes it.)`)) return;
+              if (!window.confirm(`Delete the ${hidden.length} hidden cube walls outside the sections shown? (Ctrl+Z undoes it.)`)) return;
               const ids = new Set(hidden.map((o) => o.id));
               st().setObjects((objs) => objs.filter((o) => !ids.has(o.id)));
               st().select([]);
@@ -221,6 +228,37 @@ export function WallCountBox() {
             <Trash2 className="h-3 w-3" /> Delete all {r.short}
           </button>
         ))}
+      </div>
+      </>}
+    </div>
+  );
+}
+
+/** Presentation view of the floor plan: cubicles in total and per cubicle area, plus phone booths. */
+export function CubicleCountBox() {
+  const project = usePlanStore((s) => s.project);
+  const view = usePlanStore((s) => s.view);
+  const s = activeScenario(project);
+  if (view !== 'presentation' || isWallsLayout(s)) return null;
+  const cubicles = s.objects.filter((o): o is Furniture => o.kind === 'furniture' && o.type === 'cubicle');
+  const booths = s.objects.filter((o) => o.kind === 'furniture' && o.type === 'phone-booth').length;
+  const areas = s.objects.filter((o): o is Room => o.kind === 'room' && o.roomType === 'cubicle-area');
+  const perArea = areas.map((a) => ({ name: a.name, n: cubicles.filter((c) => roomAt(s.objects, c)?.id === a.id).length }));
+  const elsewhere = cubicles.length - perArea.reduce((t, a) => t + a.n, 0);
+  const row = (label: string, n: number, strong = false) => (
+    <div key={label} className={`flex justify-between ${strong ? 'border-b border-slate-100 pb-1 font-semibold text-navy' : ''}`}>
+      <span>{label}</span>
+      <span className="font-semibold tabular-nums text-navy">{n}</span>
+    </div>
+  );
+  return (
+    <div className="absolute left-2 top-12 z-10 w-52 rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-sm shadow-lg backdrop-blur">
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Cubicle count</div>
+      {row('Cubicles', cubicles.length, true)}
+      <div className="mt-1 space-y-0.5 text-xs">
+        {perArea.map((a) => row(a.name, a.n))}
+        {elsewhere > 0 && row('Elsewhere', elsewhere)}
+        {booths > 0 && row('Phone booths', booths)}
       </div>
     </div>
   );

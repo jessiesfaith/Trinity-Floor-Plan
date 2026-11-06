@@ -84,12 +84,12 @@ export interface Box {
 }
 
 /** Rooms shown as their own section in the Cubicle walls tab, besides the cubicle areas. */
-export const EXTRA_SECTIONS = ['Office 1'];
+export const EXTRA_SECTIONS = ['Office 1', 'Kitchen'];
 
 const sectionRooms = (objects: PlanObject[]) =>
   objects.filter((o): o is Room => o.kind === 'room' && (o.roomType === 'cubicle-area' || EXTRA_SECTIONS.includes(o.name)));
 
-/** The sections the Cubicle walls tab shows: each cubicle area (and Office 1) plus a margin. */
+/** The sections the Cubicle walls tab shows: each cubicle area (and Office 1 and the kitchen) plus a margin. */
 export function sectionBoxes(objects: PlanObject[]): Box[] {
   return sectionRooms(objects)
     .map((r) => {

@@ -66,7 +66,7 @@ exactly under the traced walls and marks it calibrated.
 | Space | As traced | Status |
 |---|---|---|
 | Conference Room | 24' × 14' clear, on the window wall 12' from the left corner, 2 doors | **Contractor-fixed** |
-| Office 1 | Right triangle by the main entry: 13' clear along its door wall (runs straight up to the main entry), level bottom wall out to the angled wall (on-site sketch, Nov 2026) | **Contractor-fixed** |
+| Office 1 | Right triangle by the main entry, labelled 15' × 12': door wall runs straight up to the main entry (13' measured, bottom wall then pushed 3' toward the window wall), level bottom wall out to the angled wall | **Contractor-fixed** |
 | Office 2 | 17' clear along the window wall at the far tip, 12' deep; its top wall (with the door) runs straight out to the angled wall, in line with Offices 3 and 4 | **Contractor-fixed** |
 | Office 3 | 12' × 12' clear on the window wall | **Contractor-fixed** |
 | Office 4 | 12' × 12' clear on the window wall, next to the conference room; top wall in line with Office 3's | **Contractor-fixed** |
