@@ -176,6 +176,36 @@ export function drawFurniture(ctx: Ctx, f: Furniture, pres: boolean, stroke: str
       ctx.fillStyle = stroke === '#0f9d9a' ? stroke : (cubeWallColor(f) ?? stroke);
       ctx.fillRect(-hw, -hd, w, d);
       break;
+    case 'round-table': {
+      const r = Math.min(hw, hd);
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      break;
+    }
+    case 'tv':
+      // Wall-mounted screen: dark panel, its face (+y) marked with a light line.
+      ctx.fillStyle = '#1f2937';
+      ctx.fillRect(-hw, -hd, w, d);
+      ctx.strokeStyle = '#93c5fd';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-hw + 2, hd - 0.5);
+      ctx.lineTo(hw - 2, hd - 0.5);
+      ctx.stroke();
+      break;
+    case 'whiteboard':
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-hw, -hd, w, d);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(-hw, -hd, w, d);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(-hw + 3, hd + 1.5);
+      ctx.lineTo(hw - 3, hd + 1.5);
+      ctx.stroke();
+      break;
     case 'phone-booth': {
       // Enclosed booth: solid walls on three sides, a glass door across the front (+y),
       // a small work shelf at the back and a stool.

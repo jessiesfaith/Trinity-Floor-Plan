@@ -8,7 +8,7 @@ import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, Check, Blocks } from 'luc
 import type { InventoryItem } from '@/types/plan';
 import { activeScenario, usePlanStore } from '@/store/usePlanStore';
 import { inventoryKey, isCubicleFurniture, LONG_WALL, LONG_WALL_COLOR, SHORT_WALL, SHORT_WALL_COLOR, usedByItem } from '@/lib/cubicleParts';
-import { floorPlanLayoutOf, isWallsLayout, rebuildCubicleWalls } from '@/lib/wallsLayout';
+import { floorPlanLayoutOf, hiddenCubeWalls, isWallsLayout, rebuildCubicleWalls } from '@/lib/wallsLayout';
 import { blankInventoryItem, groupInventory } from '@/lib/inventory';
 
 const st = usePlanStore.getState;
@@ -157,6 +157,9 @@ export function WallCountBox() {
   const cubicles = plan.objects.filter((o) => o.kind === 'furniture' && o.type === 'cubicle').length;
   const placed = (key: string) => walls.objects.filter((o) => o.kind === 'furniture' && o.inventoryItem === key).length;
   const owned = (key: string) => project.inventory?.find((x) => inventoryKey(x) === key)?.qty ?? null;
+  const hidden = hiddenCubeWalls(walls.objects);
+  const hiddenLong = hidden.filter((o) => o.kind === 'furniture' && o.inventoryItem === LONG_WALL).length;
+  const hiddenShort = hidden.filter((o) => o.kind === 'furniture' && o.inventoryItem === SHORT_WALL).length;
   const rows = [
     { key: LONG_WALL, short: 'long walls', label: "Long walls (4')", color: LONG_WALL_COLOR, used: placed(LONG_WALL), have: owned(LONG_WALL) },
     { key: SHORT_WALL, short: 'short walls', label: "Short walls (2')", color: SHORT_WALL_COLOR, used: placed(SHORT_WALL), have: owned(SHORT_WALL) },
@@ -187,6 +190,22 @@ export function WallCountBox() {
         })}
       </div>
       {rows.some((r) => r.have != null && r.used > r.have) && <div className="mt-1.5 text-[10px] font-semibold text-red-700">More walls placed than the office has.</div>}
+      {hidden.length > 0 && (
+        <div className="mt-1.5 rounded bg-amber-50 px-1.5 py-1 text-[10px] text-amber-800">
+          <b>{hidden.length}</b> of these ({hiddenLong} long, {hiddenShort} short) sit outside Area A and Area B, so they are hidden here but still counted.
+          <button
+            className="mt-1 flex w-full items-center justify-center gap-1 rounded border border-amber-300 bg-white px-1 py-0.5 font-semibold text-amber-800 hover:bg-amber-100"
+            onClick={() => {
+              if (!window.confirm(`Delete the ${hidden.length} hidden cube walls outside Area A and Area B? (Ctrl+Z undoes it.)`)) return;
+              const ids = new Set(hidden.map((o) => o.id));
+              st().setObjects((objs) => objs.filter((o) => !ids.has(o.id)));
+              st().select([]);
+            }}
+          >
+            <Trash2 className="h-3 w-3" /> Delete the {hidden.length} hidden walls
+          </button>
+        </div>
+      )}
       <div className="mt-2 flex gap-1.5 border-t border-slate-100 pt-1.5">
         {rows.map((r) => (
           <button

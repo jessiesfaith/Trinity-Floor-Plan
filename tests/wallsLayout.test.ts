@@ -46,3 +46,40 @@ describe('Cubicle walls tab', () => {
     expect(wallsLayoutOf(r)!.objects.filter((o) => o.kind === 'furniture' && o.type === 'partition').length).toBe(w.objects.filter((o) => o.kind === 'furniture' && o.type === 'partition').length);
   });
 });
+
+describe('Cubicle walls tab sections', () => {
+  it('finds cube walls hidden outside Area A and Area B, and places new pieces inside them', async () => {
+    const { hiddenCubeWalls, placeInSections, sectionBoxes, inBoxes } = await import('@/lib/wallsLayout');
+    const p = createSampleProject();
+    const short = BUILT_IN_TEMPLATES.find((x) => x.id === 'part-wall-2')!;
+    const objs = [...p.scenarios[0].objects, furnitureFromTemplate(short, 60, 200, 'in B'), furnitureFromTemplate(short, 700, 300, 'in Office 3')];
+    expect(hiddenCubeWalls(objs).map((o) => o.name)).toEqual(['in Office 3']);
+    const at = placeInSections(objs, { x: 700, y: 300 });
+    expect(inBoxes(at, sectionBoxes(objs))).toBe(true);
+    expect(placeInSections(objs, { x: 60, y: 200 })).toEqual({ x: 60, y: 200 });
+  });
+});
+
+describe('Office 1 section', () => {
+  it('is shown in the Cubicle walls tab with a suggested round table, whiteboard and TV, placed once', async () => {
+    const { sectionBoxes, inBoxes } = await import('@/lib/wallsLayout');
+    const { validate } = await import('@/lib/validation');
+    const { polygonContains } = await import('@/lib/geometry');
+    const { footprint } = await import('@/lib/objects');
+    const p = openCubicleWalls(withCubicles());
+    const w = wallsLayoutOf(p)!;
+    const office1 = w.objects.find((o) => o.kind === 'room' && o.name === 'Office 1')!;
+    const sug = w.objects.filter((o) => o.kind === 'furniture' && o.name.startsWith('Office 1 '));
+    expect(sug.map((o) => o.name).sort()).toEqual(['Office 1 TV', 'Office 1 round table', 'Office 1 whiteboard']);
+    for (const f of sug) {
+      if (f.kind !== 'furniture' || office1.kind !== 'room') continue;
+      expect(inBoxes(f, sectionBoxes(w.objects))).toBe(true);
+      expect(polygonContains(office1.points, footprint(f), 1)).toBe(true);
+    }
+    const errs = validate(w.objects, p.settings).issues.filter((i) => i.severity === 'error' && sug.some((f) => i.objectIds.includes(f.id)));
+    expect(errs.map((e) => e.message)).toEqual([]);
+    // opening the tab again does not add them twice
+    const again = openCubicleWalls(openFloorPlan(p));
+    expect(wallsLayoutOf(again)!.objects.filter((o) => o.kind === 'furniture' && o.name.startsWith('Office 1 '))).toHaveLength(3);
+  });
+});

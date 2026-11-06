@@ -103,6 +103,15 @@ export function furnitureSymbol(f: Furniture, view: '2d' | 'presentation', strok
       parts.push(`<circle r="${Math.min(hw, hd)}" fill="${view === 'presentation' ? '#7fb77e' : '#fff'}" stroke="${stroke}" stroke-width="${sw}"/>`);
       parts.push(`<circle r="${Math.min(hw, hd) * 0.45}" fill="none" stroke="${stroke}" stroke-width="0.5"/>`);
       break;
+    case 'round-table':
+      parts.push(`<circle r="${Math.min(hw, hd)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`);
+      break;
+    case 'tv':
+      parts.push(`<rect x="${-hw}" y="${-hd}" width="${w}" height="${d}" fill="#1f2937"/><line x1="${-hw + 2}" y1="${hd - 0.5}" x2="${hw - 2}" y2="${hd - 0.5}" stroke="#93c5fd" stroke-width="1"/>`);
+      break;
+    case 'whiteboard':
+      parts.push(`<rect x="${-hw}" y="${-hd}" width="${w}" height="${d}" fill="#fff" stroke="${stroke}" stroke-width="1"/><line x1="${-hw + 3}" y1="${hd + 1.5}" x2="${hw - 3}" y2="${hd + 1.5}" stroke="#94a3b8" stroke-width="1"/>`);
+      break;
     case 'phone-booth': {
       const t = 3;
       parts.push(`<rect x="${-hw}" y="${-hd}" width="${w}" height="${d}" fill="${fill}" stroke="none"/>`);

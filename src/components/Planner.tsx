@@ -12,7 +12,7 @@ import { createSampleProject } from '@/lib/sampleProject';
 import { isOutdatedUneditedSample } from '@/lib/sampleFingerprint';
 import { rotateObjects } from '@/lib/orientation';
 import { inventoryKey, LONG_WALL, LONG_WALL_COLOR, SHORT_WALL, SHORT_WALL_COLOR } from '@/lib/cubicleParts';
-import { isWallsLayout, openCubicleWalls, openFloorPlan } from '@/lib/wallsLayout';
+import { isWallsLayout, openCubicleWalls, openFloorPlan, placeInSections } from '@/lib/wallsLayout';
 import { BUILD_ID, isStaleAssetError, liveBuild, reloadOnce } from '@/lib/freshVersion';
 import Toolbar from './Toolbar';
 import LeftSidebar from './LeftSidebar';
@@ -135,6 +135,8 @@ export default function Planner() {
           at = { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 };
         }
       }
+      // In the Cubicle walls tab, keep new pieces inside Area A / Area B (the rest is hidden there).
+      if (isWallsLayout(activeScenario(st().project))) at = placeInSections(objs, at);
       const room = roomAt(objs, at);
       const n = objs.filter((o) => o.kind === 'furniture' && o.type === t.type).length + 1;
       const name = t.type === 'cubicle' ? `Cubicle ${String(n).padStart(2, '0')}` : t.type === 'phone-booth' ? `Phone booth ${n}` : t.label;

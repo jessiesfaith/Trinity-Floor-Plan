@@ -18,7 +18,7 @@ import { drawFurniture } from './drawFurniture';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize, Minus, Plus, RotateCcw, RotateCw } from 'lucide-react';
 import { faceObjects, facingOf, rotateObjects, type Facing } from '@/lib/orientation';
 import { wallInsideLength, wallRuns } from '@/lib/wallLength';
-import { isWallsLayout } from '@/lib/wallsLayout';
+import { isWallsLayout, sectionBoxes } from '@/lib/wallsLayout';
 
 const TEAL = '#0f9d9a';
 const RED = '#d62828';
@@ -94,15 +94,10 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
 
   // Cubicle walls tab: only the cubicle areas (plus a margin for their walls and dimension lines)
   // are drawn, as separate sections; the rest of the office is hidden.
-  const FOCUS_PAD = 66;
   const focusBoxes = useMemo(() => {
     if (!isWallsLayout(scenario)) return null;
-    const areas = objects.filter((o): o is Room => o.kind === 'room' && o.roomType === 'cubicle-area');
-    if (!areas.length) return null;
-    return areas.map((r) => {
-      const b = bbox(r.points);
-      return { minX: b.minX - FOCUS_PAD, minY: b.minY - FOCUS_PAD, maxX: b.maxX + FOCUS_PAD, maxY: b.maxY + FOCUS_PAD };
-    });
+    const boxes = sectionBoxes(objects);
+    return boxes.length ? boxes : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenario.id, scenario.purpose, scenario.name, objects]);
   const focusBox = useMemo(() => {

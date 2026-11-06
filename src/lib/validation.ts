@@ -260,7 +260,7 @@ export function validate(objects: PlanObject[], s: PlanSettings, opts: ValidateO
     // Cube walls and phone booths are pushed right up against building walls, so tucking into a
     // wall up to its centre line counts as standing against it, not as a conflict.
     const part = !!f.inventoryItem;
-    const flush = part || f.type === 'phone-booth';
+    const flush = part || f.type === 'phone-booth' || f.type === 'tv' || f.type === 'whiteboard';
     for (const w of walls) {
       // For those, trim the footprint back by half the wall's thickness at its ends (both ways for a
       // booth; along its length for a thin cube wall) before testing.

@@ -116,6 +116,9 @@ export type FurnitureType =
   | 'printer'
   | 'partition'
   | 'phone-booth'
+  | 'round-table'
+  | 'tv'
+  | 'whiteboard'
   | 'plant'
   | 'custom';
 
@@ -227,6 +230,8 @@ export interface Scenario {
   purpose?: 'cubicle-walls';
   /** For the walls layout: the floor plan layout it was made from. */
   sourceId?: string;
+  /** For the walls layout: the suggested Office 1 furniture has been placed once. */
+  office1Suggested?: boolean;
   revision: number;
   createdAt: string;
   updatedAt: string;

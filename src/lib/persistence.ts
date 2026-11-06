@@ -1,6 +1,7 @@
 // Project persistence: IndexedDB for autosave/manual save (no 5 MB localStorage
 // cap, so embedded PDFs fit) and JSON files for import/export.
 
+import { isWallsLayout, withOffice1Suggestion } from './wallsLayout';
 import { TRINITY_ADDRESS, isTrinityProject, trinityInventory, upgradeInventory } from './inventory';
 import type { Project } from '@/types/plan';
 import { DEFAULT_LAYERS, DEFAULT_SETTINGS } from './sampleProject';
@@ -88,7 +89,7 @@ export function parseProject(text: string): Project {
     settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) },
     layers,
     background: bg,
-    scenarios: p.scenarios,
+    scenarios: p.scenarios.map((s) => (isWallsLayout(s) ? withOffice1Suggestion(s) : s)),
     activeScenarioId: p.scenarios.some((s) => s.id === p.activeScenarioId) ? p.activeScenarioId! : p.scenarios[0].id,
     customTemplates: p.customTemplates ?? [],
     employees: p.employees ?? [],
