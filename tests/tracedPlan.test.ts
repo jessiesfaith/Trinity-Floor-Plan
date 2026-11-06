@@ -51,8 +51,11 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     const bottom = Math.max(...o2.map((q) => q.y));
     const onWindow = o2.filter((q) => Math.abs(q.y - bottom) < 1e-6).map((q) => q.x);
     expect(Math.max(...onWindow) - Math.min(...onWindow)).toBeCloseTo(17, 2);
-    // Kitchen: 10'-3" wide, 11'-8" deep along the left wall.
-    expect(w('Kitchen')).toBeCloseTo(10.25, 2);
+    // Kitchen: a rectangle 11'-8" deep along the left wall; its door wall runs straight down from the
+    // corner at the end of its top wall (moved left from the measured 10'-3" width, Nov 2026).
+    expect(room('Kitchen').points).toHaveLength(4);
+    expect(w('Kitchen')).toBeGreaterThan(7.9);
+    expect(w('Kitchen')).toBeLessThan(8.3);
     expect(h('Kitchen')).toBeCloseTo(11 + 8 / 12, 2);
     // IT / Storage: 8'-6" along the top wall x 12' deep.
     expect(w('IT / Storage')).toBeCloseTo(8.5, 2);

@@ -164,6 +164,9 @@ function buildSuite(): SuiteGeometry {
   const kR = ext + 10.25 + IW; // right wall centerline
   const K2 = S(kR, kB + IW + 9.5 + ext);
   const K1 = S(kR - (T_TOP - K2.y), T_TOP);
+  // Nov 2026 change: the kitchen's door wall moves left to run straight down from K1 (the corner at
+  // the end of its 7'-9" top wall), so the kitchen is a plain rectangle and the angled corner is outside it.
+  const kW = K1.x; // kitchen door wall centerline
   const TL = S(0, T_TOP);
   const L = S(0, 0); // left corner on the window wall
   // Corridor door bay between the kitchenette and Cubicle Area A (on-site sketch): the door sits in a
@@ -228,8 +231,8 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(S(stL, stB), S(stR, stB), [[stR - stL - 0.5 - 3, 36]]), // door in the bottom wall, hinged at the right corner
     ...wallFt(S(stR, stB), S(stR, T_TOP)),
     // Kitchenette
-    ...wallFt(S(0, kB), S(kR, kB)),
-    ...wallFt(S(kR, kB), K2, [[1, 36]]), // kitchen door, near the bottom of the right wall
+    ...wallFt(S(0, kB), S(kW, kB)),
+    ...wallFt(S(kW, kB), K1, [[1, 36]]), // kitchen door, near the bottom of the right wall
     // Conference room (contractor)
     ...wallFt(S(confL, 0), S(confL, confT), [], 'interior', CONTRACTOR),
     ...wallFt(S(confL, confT), S(confR, confT), [[0.75, 36], [20.67, 36]], 'interior', CONTRACTOR),
@@ -263,7 +266,7 @@ function buildSuite(): SuiteGeometry {
   const open = R(
     'Open Area',
     'open',
-    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2T, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K2, S(kR, kB), S(0, kB)],
+    [L, S(confL, 0), S(confL, confT), S(confR, confT), S(confR, o3T), S(div32, o3T), o2T, o1e, o1a, E1, S2, S1, S(stR, T_TOP), S(stR, stB), S(stL, stB), S(stL, T_TOP), A1, N1, K2, K1, S(kW, kB), S(0, kB)],
     '#f5f8f7',
   );
   // Zones inside the open area (no walls of their own). Dimensions are clear floor.
@@ -281,7 +284,7 @@ function buildSuite(): SuiteGeometry {
     planning: { widthFt: 12, lengthFt: 22, targetMin: 6, targetMax: 8, department: 'Team Workstations' },
     notes: '12 ft along the window wall (to the conference room) x 22 ft deep, up to the kitchenette wall ("22x12").',
   });
-  const kitchen = R('Kitchen', 'kitchen', [S(0, kB), S(kR, kB), K2, K1, TL], '#fdf3e4');
+  const kitchen = R('Kitchen', 'kitchen', [S(0, kB), S(kW, kB), K1, TL], '#fdf3e4');
   const walkway: PlanObject = {
     ...makeAisle(F(aL + 8, 0).x, F(0, (walkB + walkT) / 2).y, 16 * 12, 5 * 12),
     name: "Walkway (5')",
@@ -301,7 +304,7 @@ function buildSuite(): SuiteGeometry {
     doorFt(S2, E1, 0.48, S(47, 25), 'Main entry (left leaf)'),
     doorFt(N1, K2, 1 / 3, S(16, T_TOP + 2), 'Suite door (corridor)'), // hinged by the jog, swings out into the building corridor
     doorFt(S(stR, stB), S(stL, stB), 0.5, S(40, 24), 'IT / Storage door'),
-    doorFt(S(kR, kB), K2, 1, S(5, 25), 'Kitchen door'),
+    doorFt(S(kW, kB), K1, 1, S(5, 25), 'Kitchen door'),
     doorFt(S(confL, confT), S(confR, confT), 0.75, S(15, 8), 'Conference door 1', 36, CONTRACTOR),
     doorFt(S(confR, confT), S(confL, confT), 0.75, S(34, 8), 'Conference door 2', 36, CONTRACTOR),
     doorFt(S(confR, o3T), S(div43, o3T), 0.4, S(40, 5), 'Office 4 door', 36, CONTRACTOR),
