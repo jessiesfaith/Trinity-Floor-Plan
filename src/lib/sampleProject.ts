@@ -320,8 +320,9 @@ function buildSuite(): SuiteGeometry {
   // The suite has one dedicated tenant HVAC unit, by the window wall in Cubicle Area B (on-site sketch).
   const fixtures: Furniture[] = [
     fx('storage-cab', 5.56, ext + 1, 'Dedicated tenant HVAC', { type: 'custom', width: 24, depth: 24, color: '#c9ced8', deskType: '', notes: 'Dedicated tenant HVAC unit' }),
-    // One long kitchen counter (with the sink) along the kitchen's 7'-9.75" top wall.
-    fx('storage-cab', ext + (7 + 9.75 / 12) / 2, T_TOP - ext - 1, 'Kitchen counter (sink)', { width: 7 * 12 + 9.75, depth: 24, color: '#e3d5bf' }),
+    // One 5' kitchen counter (with the sink) from the left wall along the top wall; the rest of the
+    // top wall stays empty (no refrigerator yet).
+    fx('storage-cab', ext + 2.5, T_TOP - ext - 1, 'Kitchen counter (sink)', { width: 60, depth: 24, color: '#e3d5bf' }),
     fx('shelving', stL + IW + 2.05, stB + 0.21 + 0.75, 'Shelving', { rotation: 180 }),
   ];
 

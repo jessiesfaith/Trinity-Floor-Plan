@@ -83,7 +83,7 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     const inKitchen = (x: number, y: number) => x > k.minX - 6 && x < k.maxX + 6 && y > k.minY - 6 && y < k.maxY + 6;
     expect(objs.some((o) => o.kind === 'wall' && o.wallType === 'interior' && inKitchen(o.a.x, o.a.y) && inKitchen(o.b.x, o.b.y))).toBe(false);
     const counter = objs.find((o) => o.kind === 'furniture' && o.name === 'Kitchen counter (sink)');
-    expect(counter && counter.kind === 'furniture' && counter.width).toBeCloseTo(7 * 12 + 9.75, 2);
+    expect(counter && counter.kind === 'furniture' && counter.width).toBeCloseTo(60, 2);
     expect(objs.some((o) => o.kind === 'furniture' && (o.name === 'Sink' || o.name === 'Refrigerator'))).toBe(false);
     // The corridor suite door swings in, into the suite (below its wall, toward the window wall).
     const sd = objs.find((o) => o.kind === 'door' && o.name === 'Suite door (corridor)');
@@ -106,5 +106,13 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     const ws = g.filter((o) => o.kind === 'furniture' && o.isWorkstation);
     expect(ws.filter((o) => o.name.startsWith('Cubicle A')).length).toBe(8);
     expect(ws.filter((o) => o.name.startsWith('Cubicle B')).length).toBeGreaterThan(0);
+  });
+});
+
+describe('library', () => {
+  it('has a refrigerator (33½" x 30") to add to the kitchen later', async () => {
+    const { BUILT_IN_TEMPLATES } = await import('@/lib/library');
+    const f = BUILT_IN_TEMPLATES.find((t) => t.id === 'fridge');
+    expect(f && [f.label, f.width, f.depth]).toEqual(['Refrigerator', 33.5, 30]);
   });
 });

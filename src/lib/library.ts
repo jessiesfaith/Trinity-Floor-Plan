@@ -37,6 +37,7 @@ export const BUILT_IN_TEMPLATES: FurnitureTemplate[] = [
   T({ id: 'storage-cab', label: 'Storage cabinet', category: 'Storage', type: 'storage-cabinet', width: 36, depth: 18, color: '#b9c2cf', isWorkstation: false, seats: 0, access: 'none', deskType: '' }),
   T({ id: 'filing-cab', label: 'Filing cabinet (lateral)', category: 'Storage', type: 'filing-cabinet', width: 30, depth: 20, color: '#b9c2cf', isWorkstation: false, seats: 0, access: 'none', deskType: '' }),
   T({ id: 'shelving', label: 'Shelving unit', category: 'Storage', type: 'shelving', width: 48, depth: 18, color: '#c8ced8', isWorkstation: false, seats: 0, access: 'none', deskType: '' }),
+  T({ id: 'fridge', label: 'Refrigerator', category: 'Equipment', type: 'custom', width: 33.5, depth: 30, color: '#e5e7eb', isWorkstation: false, seats: 0, access: 'none', deskType: '' }), // 33½" x 30" x 67" H, as on the inventory list
   T({ id: 'printer', label: 'Printer / copier', category: 'Equipment', type: 'printer', width: 30, depth: 26, color: '#9aa5b8', isWorkstation: false, seats: 0, access: 'none', deskType: '' }),
   T({ id: 'partition', label: 'Interior partition 6ft', category: 'Architecture', type: 'partition', width: 72, depth: 3, color: '#7a869a', isWorkstation: false, seats: 0, access: 'none', partitionHeight: 53, deskType: '' }),
   T({ id: 'plant', label: 'Plant', category: 'Decor', type: 'plant', width: 18, depth: 18, color: '#7fb77e', isWorkstation: false, seats: 0, access: 'none', deskType: '' }),
