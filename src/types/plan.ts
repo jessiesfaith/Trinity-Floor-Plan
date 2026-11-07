@@ -227,7 +227,7 @@ export interface Scenario {
   description: string;
   objects: PlanObject[];
   /** 'cubicle-walls': the Cubicle walls tab's layout (cubicles as loose cube walls). */
-  purpose?: 'cubicle-walls';
+  purpose?: 'cubicle-walls' | 'cubicle-sizes';
   /** For the walls layout: the floor plan layout it was made from. */
   sourceId?: string;
   /** For the walls layout: the suggested Office 1 furniture has been placed once. */
@@ -255,7 +255,7 @@ export interface PlanSettings {
 export interface FurnitureTemplate {
   id: string;
   label: string;
-  category: 'Workstations' | 'Cube walls' | 'Seating' | 'Tables' | 'Storage' | 'Equipment' | 'Architecture' | 'Decor' | 'Custom';
+  category: 'Workstations' | 'Cube walls' | 'Cubicle furniture' | 'Seating' | 'Tables' | 'Storage' | 'Equipment' | 'Architecture' | 'Decor' | 'Custom';
   type: FurnitureType;
   width: number;
   depth: number;

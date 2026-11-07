@@ -259,7 +259,8 @@ export function validate(objects: PlanObject[], s: PlanSettings, opts: ValidateO
     const poly = fp.get(f.id)!;
     // Cube walls and phone booths are pushed right up against building walls, so tucking into a
     // wall up to its centre line counts as standing against it, not as a conflict.
-    const part = !!f.inventoryItem;
+    // A cube wall piece (4' / 2'), as opposed to cubicle furniture, which must stay inside its cubicle.
+    const part = !!f.inventoryItem && f.type === 'partition';
     const flush = part || f.type === 'phone-booth' || f.type === 'tv' || f.type === 'whiteboard';
     for (const w of walls) {
       // For those, trim the footprint back by half the wall's thickness at its ends (both ways for a
@@ -278,7 +279,7 @@ export function validate(objects: PlanObject[], s: PlanSettings, opts: ValidateO
     }
     const room = containerRoom(objects, f);
     if (!room) {
-      if (rooms.length) push('warning', 'outside', `${f.name} is not inside any room.`, [f.id]);
+      if (rooms.length && !part) push('warning', 'outside', `${f.name} is not inside any room.`, [f.id]);
     } else if (!part && !(flush && room.roomType === 'cubicle-area') && !polygonContains(room.points, poly, 0.25)) {
       // (Cube walls may straddle room outlines; running into a real wall is caught above.)
       push('error', 'out-of-room', `${f.name} crosses the boundary of ${room.name}.`, [f.id, room.id]);

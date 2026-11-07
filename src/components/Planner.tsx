@@ -13,12 +13,13 @@ import { isOutdatedUneditedSample } from '@/lib/sampleFingerprint';
 import { rotateObjects } from '@/lib/orientation';
 import { inventoryKey, LONG_WALL, LONG_WALL_COLOR, SHORT_WALL, SHORT_WALL_COLOR } from '@/lib/cubicleParts';
 import { isWallsLayout, openCubicleWalls, openFloorPlan, placeInSections } from '@/lib/wallsLayout';
+import { isSizesLayout, openCubicleSizes } from '@/lib/sizesLayout';
 import { BUILD_ID, isStaleAssetError, liveBuild, reloadOnce } from '@/lib/freshVersion';
 import Toolbar from './Toolbar';
 import LeftSidebar from './LeftSidebar';
 import PropertiesPanel from './PropertiesPanel';
 import PlanCanvas from './canvas/PlanCanvas';
-import { CubicleCountBox, InventoryLegend, PlanHeader, WallCountBox } from './InventoryLegend';
+import { CubicleCountBox, CubicleFurnitureBox, InventoryLegend, PlanHeader, WallCountBox } from './InventoryLegend';
 import { CapacityDashboard, WarningsList } from './Dashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import GenerateDialog from './dialogs/GenerateDialog';
@@ -115,6 +116,7 @@ export default function Planner() {
   // ---- Validation + capacity (deferred so dragging stays smooth).
   const scenario = activeScenario(project);
   const inWalls = isWallsLayout(scenario);
+  const currentTab = inWalls ? 'walls' : isSizesLayout(scenario) ? 'sizes' : 'plan';
   const wallCount = (key: string) => scenario.objects.filter((o) => o.kind === 'furniture' && o.inventoryItem === key).length;
   const owned = (key: string) => project.inventory?.find((x) => inventoryKey(x) === key)?.qty;
   const deferredObjects = useDeferredValue(scenario.objects);
@@ -224,21 +226,21 @@ export default function Planner() {
             <button className="rounded border border-slate-300 px-1.5 lg:hidden" onClick={() => { setLeftOpen((o) => !o); setRightOpen(false); }}>
               {leftOpen ? 'Close' : 'Library'}
             </button>
-            {/* Tabs: the floor plan, or the cubicle walls of Area A and Area B */}
+            {/* Tabs: the floor plan, the cubicle walls of the cube areas, or sample cubicle sizes */}
             <div className="flex overflow-hidden rounded border border-slate-300" role="tablist" aria-label="View">
-              {(['plan', 'walls'] as const).map((t) => (
+              {(['plan', 'walls', 'sizes'] as const).map((t) => (
                 <button
                   key={t}
                   role="tab"
-                  aria-selected={(t === 'walls') === inWalls}
-                  className={`px-2 py-0.5 ${(t === 'walls') === inWalls ? 'bg-navy text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+                  aria-selected={t === currentTab}
+                  className={`px-2 py-0.5 ${t === currentTab ? 'bg-navy text-white' : 'text-slate-600 hover:bg-slate-100'}`}
                   onClick={() => {
-                    if ((t === 'walls') === inWalls) return;
-                    st().commit((p) => (t === 'walls' ? openCubicleWalls(p) : openFloorPlan(p)));
+                    if (t === currentTab) return;
+                    st().commit((p) => (t === 'walls' ? openCubicleWalls(p) : t === 'sizes' ? openCubicleSizes(p) : openFloorPlan(p)));
                     st().select([]);
                   }}
                 >
-                  {t === 'plan' ? 'Floor plan' : 'Cubicle walls'}
+                  {t === 'plan' ? 'Floor plan' : t === 'walls' ? 'Cubicle walls' : 'Cubicle sizes'}
                 </button>
               ))}
             </div>
@@ -272,6 +274,7 @@ export default function Planner() {
             <PlanHeader />
             <WallCountBox />
             <CubicleCountBox />
+            <CubicleFurnitureBox />
             <InventoryLegend />
           </div>
         </main>

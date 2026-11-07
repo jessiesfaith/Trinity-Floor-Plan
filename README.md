@@ -50,6 +50,15 @@ Walls can be moved, turned, deleted or added from **Library -> Cube walls**; the
 *placed / owned* for long and short walls, and **Lay walls out again from the floor plan** (in the
 inventory card) starts the walls over. The **Furniture inventory** card lists what the office owns.
 
+## Cubicle sizes tab
+
+**Cubicle sizes** is a standalone workspace with three sample cubicles - 4'x6', 6'x6' and 6'x8'
+(width = back wall, depth = sides, front open) - built from the office's cube walls. Drag pieces in
+from **Library -> Cubicle furniture** (corner, long and short desks, hanging shelf, small and long
+file cabinets). The **Cubicle furniture** box lists what is in each cubicle and says whether it
+fits; a piece that sticks out of its cubicle or runs into a wall turns red. The inventory card
+shows placed / owned for each piece.
+
 ## The starter layout (traced from Floor_Plan.pdf)
 
 The bundled plan is traced from **Floor_Plan.pdf** (page 2, clean copy; page 1

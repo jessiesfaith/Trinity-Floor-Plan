@@ -11,6 +11,7 @@ import { activeScenario, usePlanStore } from '@/store/usePlanStore';
 import { inventoryKey, isCubicleFurniture, LONG_WALL, LONG_WALL_COLOR, SHORT_WALL, SHORT_WALL_COLOR, usedByItem } from '@/lib/cubicleParts';
 import { floorPlanLayoutOf, hiddenCubeWalls, isWallsLayout, rebuildCubicleWalls } from '@/lib/wallsLayout';
 import { blankInventoryItem, groupInventory } from '@/lib/inventory';
+import { cubicleContents, isSizesLayout } from '@/lib/sizesLayout';
 
 const st = usePlanStore.getState;
 
@@ -33,7 +34,8 @@ export function InventoryLegend() {
   const objects = usePlanStore((s) => activeScenario(s.project).objects);
   if (!items || !shown) return null;
   const used = usedByItem(objects);
-  const partFurniture = objects.filter(isCubicleFurniture).length;
+  // Only the Cubicle walls tab offers clearing desks etc.; the Cubicle sizes tab is for trying them.
+  const partFurniture = isWallsLayout(activeScenario(st().project)) ? objects.filter(isCubicleFurniture).length : 0;
   const removePartFurniture = () => {
     if (!window.confirm(`Remove the ${partFurniture} desks, shelves and file cabinets from this layout and keep only the cube walls?`)) return;
     st().setObjects((objs) => objs.filter((o) => !isCubicleFurniture(o)));
@@ -260,6 +262,52 @@ export function CubicleCountBox() {
         {elsewhere > 0 && row('Elsewhere', elsewhere)}
         {booths > 0 && row('Phone booths', booths)}
       </div>
+    </div>
+  );
+}
+
+/** Cubicle sizes tab: what furniture is in each sample cubicle, and whether it fits. */
+export function CubicleFurnitureBox() {
+  const scenario = usePlanStore((s) => activeScenario(s.project));
+  const validation = usePlanStore((s) => s.validation);
+  const [folded, setFolded] = useState(false);
+  if (!isSizesLayout(scenario)) return null;
+  const errorIds = new Set((validation?.issues ?? []).filter((i) => i.severity === 'error').flatMap((i) => i.objectIds));
+  const cubes = cubicleContents(scenario.objects);
+  const pieces = cubes.reduce((n, c) => n + c.furniture.length, 0);
+  return (
+    <div className="absolute bottom-16 left-2 z-10 max-h-[calc(100%-6rem)] w-64 overflow-y-auto rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-xs shadow-lg backdrop-blur">
+      <button className="mb-1 flex w-full items-center gap-1 text-left font-semibold text-navy" onClick={() => setFolded((f) => !f)} aria-expanded={!folded}>
+        {folded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        Cubicle furniture
+        {folded && <span className="ml-auto font-normal tabular-nums text-slate-600">{pieces} pieces</span>}
+      </button>
+      {!folded && (
+        <>
+          {cubes.map(({ room, furniture }) => {
+            const counts = new Map<string, number>();
+            for (const f of furniture) counts.set(f.name, (counts.get(f.name) ?? 0) + 1);
+            const bad = furniture.filter((f) => errorIds.has(f.id)).length;
+            return (
+              <div key={room.id} className="mb-1.5 border-b border-slate-100 pb-1 last:border-0">
+                <div className="flex items-center justify-between font-semibold text-teal-700">
+                  <span>{room.name}</span>
+                  <span className={bad ? 'text-red-700' : furniture.length ? 'text-teal-700' : 'font-normal text-slate-400'}>
+                    {!furniture.length ? 'empty' : bad ? `${bad} doesn't fit` : 'fits'}
+                  </span>
+                </div>
+                {[...counts].map(([name, n]) => (
+                  <div key={name} className="flex gap-2">
+                    <span className="w-5 shrink-0 text-right font-semibold tabular-nums text-navy">{n}</span>
+                    <span>{name}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+          <div className="text-[10px] text-slate-500">Add pieces from Library → Cubicle furniture. Red means a piece sticks out of its cubicle or runs into a wall.</div>
+        </>
+      )}
     </div>
   );
 }

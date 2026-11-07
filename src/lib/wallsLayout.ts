@@ -22,11 +22,13 @@ export function wallsLayoutOf(p: Project): Scenario | undefined {
 export function floorPlanLayoutOf(p: Project): Scenario {
   const walls = wallsLayoutOf(p);
   const active = p.scenarios.find((s) => s.id === p.activeScenarioId);
-  if (active && !isWallsLayout(active)) return active;
+  // The tabs' own layouts (Cubicle walls, Cubicle sizes) are never the floor plan.
+  const ordinary = (s: Scenario) => !isWallsLayout(s) && s.purpose !== 'cubicle-sizes';
+  if (active && ordinary(active)) return active;
   return (
     (walls?.sourceId && p.scenarios.find((s) => s.id === walls.sourceId)) ||
-    (walls && p.scenarios.find((s) => !isWallsLayout(s) && walls.name.startsWith(s.name))) ||
-    p.scenarios.find((s) => !isWallsLayout(s)) ||
+    (walls && p.scenarios.find((s) => ordinary(s) && walls.name.startsWith(s.name))) ||
+    p.scenarios.find(ordinary) ||
     p.scenarios[0]
   );
 }
