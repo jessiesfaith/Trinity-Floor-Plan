@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createSampleProject, withGenerated } from '@/lib/sampleProject';
 import { validate } from '@/lib/validation';
 import { roomArea } from '@/lib/objects';
-import { bbox } from '@/lib/geometry';
+import { bbox, doorSwingPolygon } from '@/lib/geometry';
 import type { Room } from '@/types/plan';
 
 const p = createSampleProject();
@@ -67,7 +67,7 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     expect(roomArea(room('Area B')) / 144).toBeCloseTo(264, 1);
   });
 
-  it('has a 5 ft walkway from the conference room to Area A, and a walled kitchenette with a door', () => {
+  it('has a 5 ft walkway from the conference room to Area A, and an open kitchenette with one long counter', () => {
     const conf = bbox(room('Conference Room').points);
     const a = bbox(room('Area A').points);
     const confTopFace = conf.minY - 5; // the conference room's clear top edge, minus its 5" wall
@@ -78,7 +78,18 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     const b = bbox(room('Area B').points);
     const k = bbox(room('Kitchen').points);
     expect((b.minY - k.maxY) / 12).toBeCloseTo(5 / 12, 2);
-    expect(objs.some((o) => o.kind === 'door' && o.name === 'Kitchen door')).toBe(true);
+    // The kitchenette has no walls or door of its own for now, and one long counter on its top wall.
+    expect(objs.some((o) => o.kind === 'door' && o.name === 'Kitchen door')).toBe(false);
+    const inKitchen = (x: number, y: number) => x > k.minX - 6 && x < k.maxX + 6 && y > k.minY - 6 && y < k.maxY + 6;
+    expect(objs.some((o) => o.kind === 'wall' && o.wallType === 'interior' && inKitchen(o.a.x, o.a.y) && inKitchen(o.b.x, o.b.y))).toBe(false);
+    const counter = objs.find((o) => o.kind === 'furniture' && o.name === 'Kitchen counter (sink)');
+    expect(counter && counter.kind === 'furniture' && counter.width).toBeCloseTo(7 * 12 + 9.75, 2);
+    expect(objs.some((o) => o.kind === 'furniture' && (o.name === 'Sink' || o.name === 'Refrigerator'))).toBe(false);
+    // The corridor suite door swings in, into the suite (below its wall, toward the window wall).
+    const sd = objs.find((o) => o.kind === 'door' && o.name === 'Suite door (corridor)');
+    if (!sd || sd.kind !== 'door') throw new Error('no suite door');
+    const swingPts = doorSwingPolygon({ x: sd.x, y: sd.y }, sd.rotation, sd.width, sd.swing);
+    expect(swingPts.reduce((t, q) => t + q.y, 0) / swingPts.length).toBeGreaterThan(sd.y); // world y grows toward the window wall
   });
 
   it('starter layouts are the plan as drawn: no generated workstations, no conflicts', () => {

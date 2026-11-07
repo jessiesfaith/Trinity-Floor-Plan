@@ -23,11 +23,11 @@ describe('wall inside length', () => {
     const diag = w(50, 50, 150, -50, 8); // 45° wall through a's end
     expect(wallInsideLength(a, [a, diag])).toBeCloseTo(100 - 4 / Math.SQRT1_2, 6);
   });
-  it("reads 22'-0\" for the wall beside Area B", () => {
+  it("reads 22'-2.5\" for the wall beside Area B (up to the kitchen's open edge, no kitchen wall for now)", () => {
     const walls = createSampleProject().scenarios[0].objects.filter((o): o is Wall => o.kind === 'wall');
     const left = walls.filter((x) => Math.abs(x.a.x) < 1 && Math.abs(x.b.x) < 1);
     const lengths = left.map((x) => wallInsideLength(x, walls) / 12);
-    expect(lengths.some((l) => Math.abs(l - 22) < 0.01)).toBe(true);
+    expect(lengths.some((l) => Math.abs(l - (22 + 2.5 / 12)) < 0.01)).toBe(true);
   });
 });
 

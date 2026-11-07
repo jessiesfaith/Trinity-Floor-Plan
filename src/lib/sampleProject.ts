@@ -230,9 +230,8 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(S(stL, stB), S(stL, T_TOP)),
     ...wallFt(S(stL, stB), S(stR, stB), [[stR - stL - 0.5 - 3, 36]]), // door in the bottom wall, hinged at the right corner
     ...wallFt(S(stR, stB), S(stR, T_TOP)),
-    // Kitchenette
-    ...wallFt(S(0, kB), S(kW, kB)),
-    ...wallFt(S(kW, kB), K1, [[1, 36]]), // kitchen door, near the bottom of the right wall
+    // Kitchenette: no walls or door of its own for now (Nov 2026: not built yet). The Kitchen room
+    // keeps its outline as a zone, so Area B still stops 5" short of it where the wall would be.
     // Conference room (contractor)
     ...wallFt(S(confL, 0), S(confL, confT), [], 'interior', CONTRACTOR),
     ...wallFt(S(confL, confT), S(confR, confT), [[0.75, 36], [20.67, 36]], 'interior', CONTRACTOR),
@@ -284,7 +283,8 @@ function buildSuite(): SuiteGeometry {
     planning: { widthFt: 12, lengthFt: 22, targetMin: 6, targetMax: 8, department: 'Team Workstations' },
     notes: '12 ft along the window wall (to the conference room) x 22 ft deep, up to the kitchenette wall ("22x12").',
   });
-  const kitchen = R('Kitchen', 'kitchen', [S(0, kB), S(kW, kB), K1, TL], '#fdf3e4');
+  // Clear floor as it was with its walls (8'-1" x 11'-8"), now a zone with no walls of its own.
+  const kitchen = Z('Kitchen', 'kitchen', [S(ext, kB + IW), S(kW - IW, kB + IW), S(kW - IW, T_TOP - ext), S(ext, T_TOP - ext)], '#fdf3e4');
   const walkway: PlanObject = {
     ...makeAisle(F(aL + 8, 0).x, F(0, (walkB + walkT) / 2).y, 16 * 12, 5 * 12),
     name: "Walkway (5')",
@@ -302,9 +302,8 @@ function buildSuite(): SuiteGeometry {
   const doors = [
     doorFt(E1, S2, 0.48, S(50, 25), 'Main entry (right leaf)'),
     doorFt(S2, E1, 0.48, S(47, 25), 'Main entry (left leaf)'),
-    doorFt(N1, K2, 1 / 3, S(16, T_TOP + 2), 'Suite door (corridor)'), // hinged by the jog, swings out into the building corridor
+    doorFt(N1, K2, 1 / 3, S(16, K2.y - 2), 'Suite door (corridor)'), // hinged by the jog, swings in, into the suite
     doorFt(S(stR, stB), S(stL, stB), 0.5, S(40, 24), 'IT / Storage door'),
-    doorFt(S(kW, kB), K1, 1, S(5, 25), 'Kitchen door'),
     doorFt(S(confL, confT), S(confR, confT), 0.75, S(15, 8), 'Conference door 1', 36, CONTRACTOR),
     doorFt(S(confR, confT), S(confL, confT), 0.75, S(34, 8), 'Conference door 2', 36, CONTRACTOR),
     doorFt(S(confR, o3T), S(div43, o3T), 0.4, S(40, 5), 'Office 4 door', 36, CONTRACTOR),
@@ -321,8 +320,8 @@ function buildSuite(): SuiteGeometry {
   // The suite has one dedicated tenant HVAC unit, by the window wall in Cubicle Area B (on-site sketch).
   const fixtures: Furniture[] = [
     fx('storage-cab', 5.56, ext + 1, 'Dedicated tenant HVAC', { type: 'custom', width: 24, depth: 24, color: '#c9ced8', deskType: '', notes: 'Dedicated tenant HVAC unit' }),
-    fx('storage-cab', 1.9, T_TOP - ext - 1, 'Sink', { width: 24, depth: 24, color: '#e3d5bf' }),
-    fx('storage-cab', 6.6, T_TOP - ext - 1.25, 'Refrigerator', { width: 33.5, depth: 30, color: '#e3d5bf' }),
+    // One long kitchen counter (with the sink) along the kitchen's 7'-9.75" top wall.
+    fx('storage-cab', ext + (7 + 9.75 / 12) / 2, T_TOP - ext - 1, 'Kitchen counter (sink)', { width: 7 * 12 + 9.75, depth: 24, color: '#e3d5bf' }),
     fx('shelving', stL + IW + 2.05, stB + 0.21 + 0.75, 'Shelving', { rotation: 180 }),
   ];
 
