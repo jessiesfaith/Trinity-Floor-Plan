@@ -193,6 +193,9 @@ function FurnitureFields({ f, fmt }: { f: Furniture; fmt: (v: number) => string 
         </div>
       </Row>
       <p className="pb-1 text-right text-[11px] text-slate-500">Footprint {formatArea(f.width * f.depth, units)}</p>
+      <Row label="Dimensions">
+        <Switch checked={!!f.showSize} label={f.showSize ? 'Shown on plan' : 'Hidden'} onChange={(v) => upd({ showSize: v || undefined } as Partial<PlanObject>)} />
+      </Row>
       <Row label="Workstation">
         <Switch checked={f.isWorkstation} label="" onChange={(v) => upd({ isWorkstation: v, seats: v ? Math.max(1, f.seats) : f.seats, access: v ? (f.access === 'none' ? 'front-chair' : f.access) : 'none', assignedTo: v ? f.assignedTo.length ? f.assignedTo : [''] : [] } as Partial<PlanObject>)} />
       </Row>

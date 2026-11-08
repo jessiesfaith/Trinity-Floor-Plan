@@ -8,6 +8,7 @@ import { doorLatch, footprint, pointsOf, roomArea, roomAt, wallPolygon } from '.
 import { formatArea, formatLength } from './units';
 import { groupInventory } from './inventory';
 import { cubeWallColor } from './cubicleParts';
+import { sizeMarks } from './sizeMarks';
 
 export interface SvgOptions {
   view: '2d' | 'presentation';
@@ -226,6 +227,16 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
     for (const f of objects.filter((o): o is Furniture => o.kind === 'furniture')) {
       const st = hi.has(f.id) ? red : stroke;
       out.push(`<g transform="translate(${f.x},${f.y}) rotate(${f.rotation})">${furnitureSymbol(f, opts.view, st)}</g>`);
+      if (f.showSize) {
+        for (const m of sizeMarks(f, 5, 6)) {
+          const d = norm(sub(m.b, m.a));
+          const t = { x: -d.y * 3, y: d.x * 3 };
+          out.push(`<line x1="${m.a.x}" y1="${m.a.y}" x2="${m.b.x}" y2="${m.b.y}" stroke="${red}" stroke-width="0.9"/>`);
+          out.push(`<line x1="${m.a.x - t.x}" y1="${m.a.y - t.y}" x2="${m.a.x + t.x}" y2="${m.a.y + t.y}" stroke="${red}" stroke-width="0.9"/>`);
+          out.push(`<line x1="${m.b.x - t.x}" y1="${m.b.y - t.y}" x2="${m.b.x + t.x}" y2="${m.b.y + t.y}" stroke="${red}" stroke-width="0.9"/>`);
+          out.push(`<text x="${m.text.x}" y="${m.text.y}" transform="rotate(${m.angle} ${m.text.x} ${m.text.y})" font-size="8" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="${red}">${esc(m.prefix + formatLength(m.length, settings.units))}</text>`);
+        }
+      }
       if (opts.showFurnitureLabels && f.type !== 'chair' && f.width >= 30) {
         const who = f.assignedTo.filter(Boolean).join(', ');
         const fs = Math.min(7, f.width / 7);

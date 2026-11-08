@@ -15,6 +15,7 @@ import { formatArea, formatLength } from '@/lib/units';
 import { contentBounds, dimensionGeometry } from '@/lib/svgRender';
 import type { ValidationResult } from '@/lib/validation';
 import { drawFurniture } from './drawFurniture';
+import { sizeMarks } from '@/lib/sizeMarks';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize, Minus, Plus, RotateCcw, RotateCw } from 'lucide-react';
 import { faceObjects, facingOf, rotateObjects, type Facing } from '@/lib/orientation';
 import { wallInsideLength, wallRuns } from '@/lib/wallLength';
@@ -940,6 +941,27 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
                 </Group>
               );
             })}
+
+          {/* "Show dimensions": width and depth lines beside the piece (also in presentation) */}
+          {visibleLayer('furniture') &&
+            furniture
+              .filter((f) => f.showSize)
+              .flatMap((f) => {
+                const fs = Math.max(6, 8 * px);
+                const tick = 3 * px;
+                return sizeMarks(f, 5 * px, fs * 0.8).map((m, i) => {
+                  const d = norm(sub(m.b, m.a));
+                  const t = { x: -d.y * tick, y: d.x * tick };
+                  return (
+                    <Group key={`sz-${f.id}-${i}`} listening={false}>
+                      <Line points={[m.a.x, m.a.y, m.b.x, m.b.y]} stroke={RED} strokeWidth={0.9 * px} />
+                      <Line points={[m.a.x - t.x, m.a.y - t.y, m.a.x + t.x, m.a.y + t.y]} stroke={RED} strokeWidth={0.9 * px} />
+                      <Line points={[m.b.x - t.x, m.b.y - t.y, m.b.x + t.x, m.b.y + t.y]} stroke={RED} strokeWidth={0.9 * px} />
+                      <Text x={m.text.x} y={m.text.y} rotation={m.angle} offsetX={60 * px} offsetY={fs / 2} width={120 * px} align="center" text={m.prefix + fmt(m.length)} fontSize={fs} fontStyle="bold" fill={RED} />
+                    </Group>
+                  );
+                });
+              })}
 
           {/* Cubicle wall pieces: their length, small, beside each one */}
           {visibleLayer('furniture') &&
