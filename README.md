@@ -57,7 +57,9 @@ inventory card) starts the walls over. The **Furniture inventory** card lists wh
 from **Library -> Cubicle furniture** (corner, long and short desks, hanging shelf, small and long
 file cabinets). The **Cubicle furniture** box lists what is in each cubicle and says whether it
 fits; a piece that sticks out of its cubicle or runs into a wall turns red. The inventory card
-shows placed / owned for each piece.
+shows placed / owned for each piece. Under the cubicles, **Cubicle inventory in this tab** gives used / have /
+unused for long, short and corner desks (with an all-desks subtotal), then the cube walls, shelves
+and file cabinets, and a total for all pieces; it updates as pieces are added or removed.
 
 ## The starter layout (traced from Floor_Plan.pdf)
 

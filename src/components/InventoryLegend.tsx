@@ -11,7 +11,7 @@ import { activeScenario, usePlanStore } from '@/store/usePlanStore';
 import { inventoryKey, isCubicleFurniture, LONG_WALL, LONG_WALL_COLOR, SHORT_WALL, SHORT_WALL_COLOR, usedByItem } from '@/lib/cubicleParts';
 import { floorPlanLayoutOf, hiddenCubeWalls, isWallsLayout, rebuildCubicleWalls } from '@/lib/wallsLayout';
 import { blankInventoryItem, groupInventory } from '@/lib/inventory';
-import { cubicleContents, isSizesLayout } from '@/lib/sizesLayout';
+import { cubicleContents, cubicleStock, isSizesLayout, type StockRow } from '@/lib/sizesLayout';
 
 const st = usePlanStore.getState;
 
@@ -305,9 +305,56 @@ export function CubicleFurnitureBox() {
               </div>
             );
           })}
+          <CubicleStockTable />
           <div className="text-[10px] text-slate-500">Add pieces from Library → Cubicle furniture. Red means a piece sticks out of its cubicle or runs into a wall.</div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Cubicle sizes tab: for every Cubicles inventory line, how many are used in this tab and how many are left.
+ * Desks (long, short, corner) come first with their own subtotal, then the walls, shelves and cabinets. */
+function CubicleStockTable() {
+  const objects = usePlanStore((s) => activeScenario(s.project).objects);
+  const inventory = usePlanStore((s) => s.project.inventory);
+  const all = cubicleStock(objects, inventory ?? []);
+  if (!all.length) return null;
+  const deskOrder = ['Long desks', 'Short desks', 'Corner desks'];
+  const desks = deskOrder.map((n) => all.find((r) => r.item === n)).filter((r): r is StockRow => !!r);
+  const others = all.filter((r) => !desks.includes(r));
+  const head = 'text-right text-[10px] uppercase tracking-wide text-slate-500';
+  const line = (r: StockRow) => [
+    <span key={`${r.key}-n`}>{r.item}</span>,
+    <span key={`${r.key}-u`} className="text-right font-semibold text-navy">{r.used}</span>,
+    <span key={`${r.key}-h`} className="text-right text-slate-600">{r.have ?? '?'}</span>,
+    <span key={`${r.key}-l`} className={`text-right font-semibold ${r.left != null && r.left < 0 ? 'text-red-700' : 'text-teal-700'}`}>{r.left ?? '?'}</span>,
+  ];
+  const total = (label: string, rows: StockRow[]) => {
+    const used = rows.reduce((n, r) => n + r.used, 0);
+    const have = rows.reduce((n, r) => n + (r.have ?? 0), 0);
+    const b = 'border-t border-slate-200 pt-0.5 pb-1';
+    return [
+      <span key={`${label}-n`} className={`${b} font-semibold text-navy`}>{label}</span>,
+      <span key={`${label}-u`} className={`${b} text-right font-semibold text-navy`}>{used}</span>,
+      <span key={`${label}-h`} className={`${b} text-right text-slate-600`}>{have}</span>,
+      <span key={`${label}-l`} className={`${b} text-right font-semibold ${have - used < 0 ? 'text-red-700' : 'text-teal-700'}`}>{have - used}</span>,
+    ];
+  };
+  return (
+    <div className="mb-1.5 border-t border-slate-200 pt-1.5">
+      <div className="mb-0.5 font-semibold text-navy">Cubicle inventory in this tab</div>
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-2 gap-y-0.5 tabular-nums">
+        <span />
+        <span className={head}>Used</span>
+        <span className={head}>Have</span>
+        <span className={head}>Unused</span>
+        {desks.flatMap(line)}
+        {desks.length > 0 && total('All desks', desks)}
+        {others.flatMap(line)}
+        {total('All pieces', all)}
+      </div>
+      {all.some((r) => r.left != null && r.left < 0) && <div className="mt-1 text-[10px] font-semibold text-red-700">Red: more used here than the office has.</div>}
     </div>
   );
 }

@@ -2,8 +2,8 @@
 // 6'x6' and 6'x8' - built from the office's cube walls, to try furniture in and see how it fits.
 // Width is the back wall, depth the two sides; the front stays open.
 
-import type { Furniture, PlanObject, Project, Room, Scenario } from '@/types/plan';
-import { PART, panelsFor } from './cubicleParts';
+import type { Furniture, InventoryItem, PlanObject, Project, Room, Scenario } from '@/types/plan';
+import { PART, inventoryKey, panelsFor, usedByItem } from './cubicleParts';
 import { furnitureFromTemplate, makeRoom, uid } from './objects';
 
 export const SIZES_PURPOSE = 'cubicle-sizes' as const;
@@ -98,4 +98,25 @@ export function cubicleContents(objects: PlanObject[]): { room: Room; furniture:
   };
   const furniture = objects.filter((o): o is Furniture => o.kind === 'furniture' && o.type !== 'partition');
   return rooms.map((room) => ({ room, furniture: furniture.filter((f) => inside(room, f)) }));
+}
+
+export interface StockRow {
+  key: string;
+  item: string;
+  used: number;
+  have: number | null;
+  /** have - used, or null when the quantity owned is unknown. */
+  left: number | null;
+}
+
+/** Every Cubicles inventory line, with how many the given objects use and how many are left unused. */
+export function cubicleStock(objects: PlanObject[], inventory: InventoryItem[]): StockRow[] {
+  const used = usedByItem(objects);
+  return inventory
+    .filter((x) => x.area.trim() === 'Cubicles')
+    .map((x) => {
+      const key = inventoryKey(x);
+      const u = used.get(key) ?? 0;
+      return { key, item: x.item, used: u, have: x.qty ?? null, left: x.qty == null ? null : x.qty - u };
+    });
 }

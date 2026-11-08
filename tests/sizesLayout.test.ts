@@ -58,3 +58,20 @@ describe('Cubicle sizes tab', () => {
     expect(errors.filter((i) => s.objects.some((o) => o.kind === 'furniture' && i.objectIds.includes(o.id)))).toEqual([]);
   });
 });
+
+describe('cubicle stock in the Cubicle sizes tab', () => {
+  it('counts used and unused per Cubicles inventory line, walls included', async () => {
+    const { cubicleStock, sampleCubicles } = await import('@/lib/sizesLayout');
+    const { trinityInventory } = await import('@/lib/inventory');
+    const { BUILT_IN_TEMPLATES } = await import('@/lib/library');
+    const { furnitureFromTemplate } = await import('@/lib/objects');
+    const desk = furnitureFromTemplate(BUILT_IN_TEMPLATES.find((t) => t.id === 'part-desk-long')!, 24, 12, 'Long desk', 0);
+    const rows = cubicleStock([...sampleCubicles(), desk], trinityInventory());
+    const row = (item: string) => rows.find((r) => r.item === item)!;
+    expect(row('Long cubicle walls')).toMatchObject({ used: 11, have: 29, left: 18 }); // 3 + 3 + 5
+    expect(row('Short cubicle walls')).toMatchObject({ used: 6, have: 13, left: 7 }); // 2 + 3 + 1
+    expect(row('Long desks')).toMatchObject({ used: 1, have: 8, left: 7 });
+    expect(row('Corner desks')).toMatchObject({ used: 0, left: 8 });
+    expect(rows.every((r) => r.key.startsWith('Cubicles|'))).toBe(true);
+  });
+});
