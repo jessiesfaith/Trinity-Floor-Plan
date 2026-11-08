@@ -91,7 +91,7 @@ exactly under the traced walls and marks it calibrated.
 | Office 4 | 12' × 12' clear on the window wall, next to the conference room; top wall in line with Office 3's | **Contractor-fixed** |
 | IT / Storage ("Stor") | 8'-6" along the top wall × 12' deep, right after Cubicle Area A | Existing |
 | Walkway | 5'-0" from the conference room to Cubicle Area A (marked walking aisle) | Planned |
-| Kitchen | Top-left corner, 11'-8" deep along the left wall; 8'-1" wide, ending at the corner of its 7'-9" top wall; a 5' counter (with the sink) from the left wall along that top wall, the rest left empty (no refrigerator yet) | Zone only: no walls or door for now (Nov 2026) |
+| Kitchen | Top-left corner, 11'-8" deep along the left wall; 8'-1" wide, ending at the corner of its 7'-9" top wall; one counter on that top wall, about 2'-11" in from the left wall and 2'-4" long, up to the refrigerator; the left corner is empty | Zone only: no walls or door for now (Nov 2026) |
 | Area A (cubicles) | 16' × 12' between the corridor-door wall and IT / Storage, right after the 5' walkway (2'-8" spare behind it) ("12x16", 6–8) | Zone in the open area |
 | Area B (cubicles) | 12' × 22' from the window wall up to the kitchenette wall, between the left wall and the conference room ("22x12") | Zone in the open area |
 | Doors | Main entry (pair of 3' leaves) at the top of the 45° wall; second suite door at the corridor jog, swinging in | As drawn |

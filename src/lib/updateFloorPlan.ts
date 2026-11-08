@@ -24,6 +24,9 @@ const PREVIOUS_STARTER_NAMES = [
   'furniture:HVAC unit 2',
   'furniture:HVAC unit 3',
   'furniture:HVAC unit 4',
+  // Earlier kitchen fixtures, now one "Kitchen counter".
+  'furniture:Kitchen counter (sink)',
+  'furniture:Sink',
 ];
 
 export interface FloorPlanUpdate {

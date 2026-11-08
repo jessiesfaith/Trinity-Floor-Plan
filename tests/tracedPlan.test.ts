@@ -82,8 +82,9 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     expect(objs.some((o) => o.kind === 'door' && o.name === 'Kitchen door')).toBe(false);
     const inKitchen = (x: number, y: number) => x > k.minX - 6 && x < k.maxX + 6 && y > k.minY - 6 && y < k.maxY + 6;
     expect(objs.some((o) => o.kind === 'wall' && o.wallType === 'interior' && inKitchen(o.a.x, o.a.y) && inKitchen(o.b.x, o.b.y))).toBe(false);
-    const counter = objs.find((o) => o.kind === 'furniture' && o.name === 'Kitchen counter (sink)');
-    expect(counter && counter.kind === 'furniture' && counter.width).toBeCloseTo(60, 2);
+    const counter = objs.find((o) => o.kind === 'furniture' && o.name === 'Kitchen counter');
+    expect(counter && counter.kind === 'furniture' && counter.width).toBeCloseTo(27.65, 2);
+    expect(objs.some((o) => o.kind === 'furniture' && o.name === 'Kitchen counter (sink)')).toBe(false);
     expect(objs.some((o) => o.kind === 'furniture' && (o.name === 'Sink' || o.name === 'Refrigerator'))).toBe(false);
     // The corridor suite door swings in, into the suite (below its wall, toward the window wall).
     const sd = objs.find((o) => o.kind === 'door' && o.name === 'Suite door (corridor)');
@@ -114,5 +115,18 @@ describe('library', () => {
     const { BUILT_IN_TEMPLATES } = await import('@/lib/library');
     const f = BUILT_IN_TEMPLATES.find((t) => t.id === 'fridge');
     expect(f && [f.label, f.width, f.depth]).toEqual(['Refrigerator', 33.5, 30]);
+  });
+});
+
+describe('Update floor plan and the kitchen counter', () => {
+  it('leaves one kitchen counter, dropping the old 5\' sink counter', async () => {
+    const { updateFloorPlan } = await import('@/lib/updateFloorPlan');
+    const { furnitureFromTemplate } = await import('@/lib/objects');
+    const { BUILT_IN_TEMPLATES } = await import('@/lib/library');
+    const p = createSampleProject();
+    const old = { ...furnitureFromTemplate(BUILT_IN_TEMPLATES.find((t) => t.id === 'storage-cab')!, 34, -17, 'Kitchen counter (sink)', 0), width: 60 };
+    const withOld = { ...p, scenarios: p.scenarios.map((s, i) => (i === 0 ? { ...s, objects: [...s.objects, old] } : s)) };
+    const objs = updateFloorPlan(withOld).project.scenarios[0].objects;
+    expect(objs.filter((o) => o.kind === 'furniture' && /^Kitchen counter/.test(o.name)).map((o) => o.name)).toEqual(['Kitchen counter']);
   });
 });
