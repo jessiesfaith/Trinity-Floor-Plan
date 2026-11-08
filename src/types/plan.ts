@@ -283,6 +283,13 @@ export interface InventoryItem {
   size: string;
 }
 
+/** One line on the Checklist tab. */
+export interface ChecklistItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
 export interface Project {
   schema: 'trinity-floor-plan';
   version: 1;
@@ -293,6 +300,8 @@ export interface Project {
   inventory?: InventoryItem[];
   /** Show the inventory legend over the plan (default true). */
   showInventory?: boolean;
+  /** The Checklist tab's items, in order. */
+  checklist?: ChecklistItem[];
   settings: PlanSettings;
   layers: LayerState[];
   background?: Background;

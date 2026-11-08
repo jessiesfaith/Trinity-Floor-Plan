@@ -19,6 +19,7 @@ import Toolbar from './Toolbar';
 import LeftSidebar from './LeftSidebar';
 import PropertiesPanel from './PropertiesPanel';
 import PlanCanvas from './canvas/PlanCanvas';
+import { ChecklistView } from './ChecklistView';
 import { CubicleCountBox, CubicleFurnitureBox, InventoryLegend, PlanHeader, WallCountBox } from './InventoryLegend';
 import { CapacityDashboard, WarningsList } from './Dashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -39,6 +40,7 @@ export default function Planner() {
   // On narrow screens (below 1024px) the side panels fold away and open over the plan.
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
   const viewCenter = useRef<() => Pt>(() => ({ x: 0, y: 0 }));
   const st = usePlanStore.getState;
 
@@ -116,7 +118,8 @@ export default function Planner() {
   // ---- Validation + capacity (deferred so dragging stays smooth).
   const scenario = activeScenario(project);
   const inWalls = isWallsLayout(scenario);
-  const currentTab = inWalls ? 'walls' : isSizesLayout(scenario) ? 'sizes' : 'plan';
+  const layoutTab = inWalls ? 'walls' : isSizesLayout(scenario) ? 'sizes' : 'plan';
+  const currentTab = checklistOpen ? 'checklist' : layoutTab;
   const wallCount = (key: string) => scenario.objects.filter((o) => o.kind === 'furniture' && o.inventoryItem === key).length;
   const owned = (key: string) => project.inventory?.find((x) => inventoryKey(x) === key)?.qty;
   const deferredObjects = useDeferredValue(scenario.objects);
@@ -228,7 +231,7 @@ export default function Planner() {
             </button>
             {/* Tabs: the floor plan, the cubicle walls of the cube areas, or sample cubicle sizes */}
             <div className="flex overflow-hidden rounded border border-slate-300" role="tablist" aria-label="View">
-              {(['plan', 'walls', 'sizes'] as const).map((t) => (
+              {(['plan', 'walls', 'sizes', 'checklist'] as const).map((t) => (
                 <button
                   key={t}
                   role="tab"
@@ -236,11 +239,18 @@ export default function Planner() {
                   className={`px-2 py-0.5 ${t === currentTab ? 'bg-navy text-white' : 'text-slate-600 hover:bg-slate-100'}`}
                   onClick={() => {
                     if (t === currentTab) return;
+                    if (t === 'checklist') {
+                      setChecklistOpen(true);
+                      st().select([]);
+                      return;
+                    }
+                    setChecklistOpen(false);
+                    if (t === layoutTab) return;
                     st().commit((p) => (t === 'walls' ? openCubicleWalls(p) : t === 'sizes' ? openCubicleSizes(p) : openFloorPlan(p)));
                     st().select([]);
                   }}
                 >
-                  {t === 'plan' ? 'Floor plan' : t === 'walls' ? 'Cubicle walls' : 'Cubicle sizes'}
+                  {t === 'plan' ? 'Floor plan' : t === 'walls' ? 'Cubicle walls' : t === 'sizes' ? 'Cubicle sizes' : 'Checklist'}
                 </button>
               ))}
             </div>
@@ -276,6 +286,7 @@ export default function Planner() {
             <CubicleCountBox />
             <CubicleFurnitureBox />
             <InventoryLegend />
+            {checklistOpen && <ChecklistView />}
           </div>
         </main>
         <aside className={`${rightOpen ? 'absolute inset-y-0 right-0 z-30 flex max-w-[85vw] shadow-xl' : 'hidden'} w-80 shrink-0 flex-col border-l border-slate-200 bg-white lg:static lg:flex lg:shadow-none`}>

@@ -86,6 +86,9 @@ export function parseProject(text: string): Project {
     address: inv.address ?? (trinity ? TRINITY_ADDRESS : undefined),
     inventory: Array.isArray(inv.inventory) ? inv.inventory : trinity ? trinityInventory() : undefined,
     showInventory: p.showInventory,
+    checklist: Array.isArray(p.checklist)
+      ? p.checklist.filter((x) => x && typeof x.id === 'string').map((x) => ({ id: x.id, text: String(x.text ?? ''), done: !!x.done }))
+      : undefined,
     settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) },
     layers,
     background: bg,

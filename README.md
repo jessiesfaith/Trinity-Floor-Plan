@@ -50,6 +50,14 @@ Walls can be moved, turned, deleted or added from **Library -> Cube walls**; the
 *placed / owned* for long and short walls, and **Lay walls out again from the floor plan** (in the
 inventory card) starts the walls over. The **Furniture inventory** card lists what the office owns.
 
+## Checklist tab
+
+**Checklist** (next to Cubicle sizes) is a to-do list saved with the plan. Click an item to edit its
+text, tick it off, move it up or down, or delete it with the bin icon; type in the box at the bottom
+and press Enter (or Add) to add one. Enter inside an item adds a new item below it, and Backspace
+on an empty item deletes it. Changes autosave and can be undone, and the list goes with the plan
+when it is saved or exported.
+
 ## Cubicle sizes tab
 
 **Cubicle sizes** is a standalone workspace with three sample cubicles - 4'x6', 6'x6' and 6'x8'
