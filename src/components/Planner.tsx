@@ -15,6 +15,8 @@ import { inventoryKey, LONG_WALL, LONG_WALL_COLOR, SHORT_WALL, SHORT_WALL_COLOR 
 import { isWallsLayout, openCubicleWalls, openFloorPlan, placeInSections } from '@/lib/wallsLayout';
 import { isSizesLayout, openCubicleSizes } from '@/lib/sizesLayout';
 import { BUILD_ID, isStaleAssetError, liveBuild, reloadOnce } from '@/lib/freshVersion';
+import { createSaveSync } from '@/lib/saveSync';
+import type { Project } from '@/types/plan';
 import Toolbar from './Toolbar';
 import LeftSidebar from './LeftSidebar';
 import PropertiesPanel from './PropertiesPanel';
@@ -43,13 +45,49 @@ export default function Planner() {
   const [checklistOpen, setChecklistOpen] = useState(false);
   const viewCenter = useRef<() => Pt>(() => ({ x: 0, y: 0 }));
   const st = usePlanStore.getState;
+  // Saving safely alongside other tabs: never write over a plan saved elsewhere since this tab
+  // loaded it. `written` is the project this tab last saved or loaded (nothing unsaved when equal).
+  const channel = useMemo(() => (typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('trinity-floor-plan')), []);
+  const sync = useMemo(
+    () => createSaveSync(() => idbGet<string>(AUTOSAVE_KEY), (json) => idbSet(AUTOSAVE_KEY, json), () => channel?.postMessage('saved')),
+    [channel],
+  );
+  const written = useRef<Project | null>(null);
+  const [conflict, setConflict] = useState(false);
+  const adopt = useCallback(
+    (raw: string) => {
+      st().loadProject(parseProject(raw), { markSaved: true });
+      sync.accept(raw);
+      written.current = st().project;
+      setConflict(false);
+    },
+    [st, sync],
+  );
+  /** Save this tab's plan unless another tab (or anything else) saved since; returns false on a conflict. */
+  const saveSafely = useCallback(
+    async (force = false) => {
+      const p = st().project;
+      if (!force && p === written.current) return true;
+      const r = await sync.write(JSON.stringify(p), { force });
+      if (r === 'conflict') {
+        setConflict(true);
+        return false;
+      }
+      written.current = p;
+      setConflict(false);
+      return true;
+    },
+    [st, sync],
+  );
 
   // ---- Load: autosave -> manual save -> sample project. An unedited copy of an older starter
   // plan is replaced by the current one, so returning visitors see starter-plan updates.
   useEffect(() => {
     (async () => {
       try {
-        const saved = (await idbGet<string>(AUTOSAVE_KEY)) ?? (await idbGet<string>(MANUAL_KEY));
+        const auto = await idbGet<string>(AUTOSAVE_KEY);
+        sync.accept(auto);
+        const saved = auto ?? (await idbGet<string>(MANUAL_KEY));
         if (saved && isOutdatedUneditedSample(JSON.parse(saved))) {
           st().loadProject(createSampleProject());
           setReady(true);
@@ -57,6 +95,7 @@ export default function Planner() {
         }
         if (saved) {
           st().loadProject(parseProject(saved), { markSaved: true });
+          written.current = st().project;
           setReady(true);
           return;
         }
@@ -79,8 +118,9 @@ export default function Planner() {
       busy = true;
       const live = await liveBuild();
       if (live && live !== BUILD_ID) {
-        if (st().dirty) await idbSet(AUTOSAVE_KEY, JSON.stringify(st().project)).catch(() => undefined);
-        if (reloadOnce(live)) return;
+        // Save first, but never over a plan saved elsewhere; on a conflict, stay and let the user choose.
+        const ok = await saveSafely().catch(() => false);
+        if (ok && reloadOnce(live)) return;
       }
       busy = false;
     };
@@ -97,23 +137,55 @@ export default function Planner() {
       window.removeEventListener('error', onError);
       window.removeEventListener('unhandledrejection', onError);
     };
-  }, [st]);
+  }, [st, saveSafely]);
 
-  // ---- Autosave (debounced, IndexedDB).
+  // ---- Autosave (debounced, IndexedDB), never over a plan saved elsewhere meanwhile.
   useEffect(() => {
-    if (!ready || !dirty) return;
+    if (!ready || !dirty || conflict) return;
     const t = setTimeout(() => {
-      idbSet(AUTOSAVE_KEY, JSON.stringify(st().project)).catch(() => undefined);
+      saveSafely().catch(() => undefined);
     }, AUTOSAVE_MS);
     return () => clearTimeout(t);
-  }, [project, dirty, ready, st]);
+  }, [project, dirty, ready, conflict, saveSafely]);
+
+  // ---- Pick up a plan saved elsewhere (another tab or window): load it when this tab has nothing
+  // unsaved, otherwise ask. Checked when another tab saves, when this tab comes back into view,
+  // and every few seconds while it is visible.
+  useEffect(() => {
+    if (!ready) return;
+    let busy = false;
+    const check = async () => {
+      if (busy || document.visibilityState !== 'visible') return;
+      busy = true;
+      try {
+        const raw = await sync.changedElsewhere();
+        if (raw) {
+          if (st().project === written.current) adopt(raw);
+          else setConflict(true);
+        }
+      } catch {
+        /* storage unavailable: keep going */
+      }
+      busy = false;
+    };
+    const onMsg = () => check();
+    channel?.addEventListener('message', onMsg);
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('focus', check);
+    const timer = setInterval(check, 4000);
+    return () => {
+      channel?.removeEventListener('message', onMsg);
+      document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('focus', check);
+      clearInterval(timer);
+    };
+  }, [ready, sync, channel, adopt, st]);
 
   const save = useCallback(async () => {
-    const json = JSON.stringify(st().project);
-    await idbSet(MANUAL_KEY, json);
-    await idbSet(AUTOSAVE_KEY, json);
+    if (!(await saveSafely(false))) return;
+    await idbSet(MANUAL_KEY, JSON.stringify(st().project));
     st().markSaved();
-  }, [st]);
+  }, [st, saveSafely]);
 
   // ---- Validation + capacity (deferred so dragging stays smooth).
   const scenario = activeScenario(project);
@@ -220,6 +292,32 @@ export default function Planner() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <Toolbar onSave={save} />
+      {conflict && (
+        <div role="alert" className="flex flex-wrap items-center gap-2 border-b border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-amber-900">
+          <span className="font-semibold">This plan was changed somewhere else (another tab or window) while you were editing here.</span>
+          <span>Your latest changes in this tab are not saved yet.</span>
+          <span className="ml-auto flex gap-1.5">
+            <button
+              className="rounded bg-navy px-2 py-0.5 font-semibold text-white hover:opacity-90"
+              onClick={async () => {
+                const raw = await idbGet<string>(AUTOSAVE_KEY);
+                if (raw) adopt(raw);
+                else setConflict(false);
+              }}
+            >
+              Load the latest plan
+            </button>
+            <button
+              className="rounded border border-amber-400 bg-white px-2 py-0.5 font-semibold text-amber-900 hover:bg-amber-100"
+              onClick={() => {
+                if (window.confirm("Keep this tab's version and replace the plan saved elsewhere?")) saveSafely(true).catch(() => undefined);
+              }}
+            >
+              Keep this tab&apos;s version
+            </button>
+          </span>
+        </div>
+      )}
       <div className="relative flex min-h-0 flex-1">
         <aside className={`${leftOpen ? 'absolute inset-y-0 left-0 z-30 block max-w-[85vw] shadow-xl' : 'hidden'} w-72 shrink-0 border-r border-slate-200 bg-white lg:static lg:block lg:shadow-none`}>
           <LeftSidebar onAddTemplate={(t) => place(t)} />

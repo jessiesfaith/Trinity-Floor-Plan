@@ -50,6 +50,21 @@ Walls can be moved, turned, deleted or added from **Library -> Cube walls**; the
 *placed / owned* for long and short walls, and **Lay walls out again from the floor plan** (in the
 inventory card) starts the walls over. The **Furniture inventory** card lists what the office owns.
 
+## Desk and table sizes
+
+Desks and tables (single, long, short, corner and shared desks, benches, conference and round
+tables) always show their size on the plan, in presentation view and in exports: a red dimension
+line along the back (width) and one along a side (depth), like the plan's other dimensions. A round
+table shows its diameter.
+
+## Several tabs or windows
+
+The plan autosaves in the browser. Each open planner tab checks before saving that nobody else
+saved in the meantime: a tab with nothing unsaved quietly loads a plan saved elsewhere (when
+another tab saves, when it comes back into view, and every few seconds), and a tab with unsaved
+changes shows a bar offering **Load the latest plan** or **Keep this tab's version** instead of
+writing over the other one. Reloading into a newer deployment also never saves over a newer plan.
+
 ## Checklist tab
 
 **Checklist** (next to Cubicle sizes) is a to-do list saved with the plan. Click an item to edit its
