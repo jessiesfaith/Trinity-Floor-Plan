@@ -15,7 +15,7 @@ import { formatArea, formatLength } from '@/lib/units';
 import { contentBounds, dimensionGeometry } from '@/lib/svgRender';
 import type { ValidationResult } from '@/lib/validation';
 import { drawFurniture } from './drawFurniture';
-import { sizeMarks } from '@/lib/sizeMarks';
+import { showsSize, sizeMarks } from '@/lib/sizeMarks';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Maximize, Minus, Plus, RotateCcw, RotateCw } from 'lucide-react';
 import { faceObjects, facingOf, rotateObjects, type Facing } from '@/lib/orientation';
 import { wallInsideLength, wallRuns } from '@/lib/wallLength';
@@ -942,10 +942,10 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
               );
             })}
 
-          {/* "Show dimensions": width and depth lines beside the piece (also in presentation) */}
+          {/* Desk and table sizes: width and depth lines beside each one (also in presentation) */}
           {visibleLayer('furniture') &&
             furniture
-              .filter((f) => f.showSize)
+              .filter(showsSize)
               .flatMap((f) => {
                 const fs = Math.max(6, 8 * px);
                 const tick = 3 * px;

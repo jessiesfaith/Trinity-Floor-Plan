@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sizeMarks } from '@/lib/sizeMarks';
+import { showsSize, sizeMarks } from '@/lib/sizeMarks';
 import { renderSvg } from '@/lib/svgRender';
 import { BUILT_IN_TEMPLATES } from '@/lib/library';
 import { furnitureFromTemplate } from '@/lib/objects';
@@ -7,9 +7,9 @@ import { createSampleProject } from '@/lib/sampleProject';
 
 const tpl = (id: string) => BUILT_IN_TEMPLATES.find((t) => t.id === id)!;
 
-describe('show dimensions on a furniture piece', () => {
+describe('desk and table sizes on the plan', () => {
   it('measures the width along the back and the depth along a side, outside the piece', () => {
-    const desk = { ...furnitureFromTemplate(tpl('part-desk-long'), 100, 100, 'Long desk', 0), showSize: true };
+    const desk = furnitureFromTemplate(tpl('part-desk-long'), 100, 100, 'Long desk', 0);
     const [w, d] = sizeMarks(desk, 5, 6);
     expect(w.length).toBeCloseTo(48, 6);
     expect(d.length).toBeCloseTo(24, 6);
@@ -27,11 +27,13 @@ describe('show dimensions on a furniture piece', () => {
     expect(marks[0].prefix).toBe('⌀ ');
   });
 
-  it('is drawn in the exported plan only for pieces that have it switched on', () => {
+  it('is drawn for desks and tables, always, and not for storage or cube walls', () => {
     const p = createSampleProject();
-    const on = { ...furnitureFromTemplate(tpl('part-desk-long'), 0, 0, 'Long desk', 0), showSize: true };
-    const off = furnitureFromTemplate(tpl('part-desk-short'), 200, 0, 'Short desk', 0);
-    const { svg } = renderSvg([on, off], p.settings, { view: 'presentation', layers: p.layers, showDimensions: true, showFurnitureLabels: false, showRoomAreas: false, showSeatCounts: false, showLegend: false });
+    const desk = furnitureFromTemplate(tpl('part-desk-long'), 0, 0, 'Long desk', 0);
+    const cab = furnitureFromTemplate(tpl('storage-cab'), 200, 0, 'Cabinet', 0);
+    const wall = furnitureFromTemplate(tpl('part-wall-4'), 400, 0, 'Wall', 0);
+    expect([desk, cab, wall].map(showsSize)).toEqual([true, false, false]);
+    const { svg } = renderSvg([desk, cab, wall], p.settings, { view: 'presentation', layers: p.layers, showDimensions: true, showFurnitureLabels: false, showRoomAreas: false, showSeatCounts: false, showLegend: false });
     expect(svg).toContain(">4'-0&quot;<");
     expect(svg).toContain(">2'-0&quot;<");
     expect((svg.match(/font-weight="bold" text-anchor="middle" dominant-baseline="middle"/g) ?? []).length).toBe(2);

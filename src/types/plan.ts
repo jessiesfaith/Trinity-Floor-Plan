@@ -155,8 +155,6 @@ export interface Furniture extends BaseObject {
   overlapsAllowed?: boolean;
   /** Inventory line this piece draws from, as "Area|Item" (e.g. "Cubicles|Long cubicle walls"). */
   inventoryItem?: string;
-  /** Draw the piece's width and depth beside it (plan, presentation and export). */
-  showSize?: boolean;
 }
 
 export interface TextLabel extends BaseObject {

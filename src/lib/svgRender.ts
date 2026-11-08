@@ -8,7 +8,7 @@ import { doorLatch, footprint, pointsOf, roomArea, roomAt, wallPolygon } from '.
 import { formatArea, formatLength } from './units';
 import { groupInventory } from './inventory';
 import { cubeWallColor } from './cubicleParts';
-import { sizeMarks } from './sizeMarks';
+import { showsSize, sizeMarks } from './sizeMarks';
 
 export interface SvgOptions {
   view: '2d' | 'presentation';
@@ -227,7 +227,7 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
     for (const f of objects.filter((o): o is Furniture => o.kind === 'furniture')) {
       const st = hi.has(f.id) ? red : stroke;
       out.push(`<g transform="translate(${f.x},${f.y}) rotate(${f.rotation})">${furnitureSymbol(f, opts.view, st)}</g>`);
-      if (f.showSize) {
+      if (showsSize(f)) {
         for (const m of sizeMarks(f, 5, 6)) {
           const d = norm(sub(m.b, m.a));
           const t = { x: -d.y * 3, y: d.x * 3 };

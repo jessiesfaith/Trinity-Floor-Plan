@@ -1,6 +1,7 @@
-// "Show dimensions" on a furniture piece: a dimension line along its back (width) and one side
-// (depth), just outside the piece, so a plan shown to others reads the piece's size at a glance.
-// A round table gets one line across, for its diameter.
+// Desk and table sizes, always shown like the plan's other dimensions: a dimension line along the
+// piece's back (width) and one side (depth), just outside it. A round table gets one line, for its
+// diameter. Cubicles and phone booths have their own side lengths; storage, chairs and cube walls
+// get none.
 
 import type { Furniture, Pt } from '@/types/plan';
 import { add, dist, norm, scale, sub } from './geometry';
@@ -19,7 +20,12 @@ export interface SizeMark {
   prefix: string;
 }
 
-/** Dimension lines for a piece with `showSize` on; `gap` is how far outside the piece they sit. */
+const SIZED: ReadonlySet<Furniture['type']> = new Set(['desk', 'l-desk', 'shared-desk', 'bench', 'conference-table', 'round-table']);
+
+/** True for the pieces whose size is drawn on the plan (desks and tables). */
+export const showsSize = (f: Furniture) => SIZED.has(f.type);
+
+/** Dimension lines for a desk or table; `gap` is how far outside the piece they sit. */
 export function sizeMarks(f: Furniture, gap: number, textGap: number): SizeMark[] {
   const c = footprint(f);
   const center = { x: f.x, y: f.y };
