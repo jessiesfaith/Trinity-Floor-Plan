@@ -75,3 +75,34 @@ describe('cubicle stock in the Cubicle sizes tab', () => {
     expect(rows.every((r) => r.key.startsWith('Cubicles|'))).toBe(true);
   });
 });
+
+describe('Cubicle sizes tab and Update floor plan', () => {
+  it('Update floor plan leaves the Cubicle sizes layout alone', async () => {
+    const { openCubicleSizes, sizesLayoutOf } = await import('@/lib/sizesLayout');
+    const { updateFloorPlan } = await import('@/lib/updateFloorPlan');
+    const p = openCubicleSizes(createSampleProject());
+    const before = sizesLayoutOf(p)!;
+    const after = sizesLayoutOf(updateFloorPlan(p).project)!;
+    expect(after).toBe(before);
+  });
+
+  it('a sizes layout that got the floor plan copied in is repaired on load, keeping desks and walls', async () => {
+    const { openCubicleSizes, sizesLayoutOf } = await import('@/lib/sizesLayout');
+    const { parseProject } = await import('@/lib/persistence');
+    const p = openCubicleSizes(createSampleProject());
+    const s = sizesLayoutOf(p)!;
+    const desk = furnitureFromTemplate(BUILT_IN_TEMPLATES.find((t) => t.id === 'part-desk-long')!, 24, 12, 'Long desk 4′', 0);
+    // What the old Update floor plan did: the building's walls, rooms, doors and notes replace the sample rooms.
+    const floor = createSampleProject().scenarios[0].objects;
+    const broken = { ...s, objects: [...floor, ...s.objects.filter((o) => o.kind !== 'room'), desk] };
+    const loaded = parseProject(JSON.stringify({ ...p, scenarios: p.scenarios.map((x) => (x.id === s.id ? broken : x)) }));
+    const fixed = sizesLayoutOf(loaded)!.objects;
+    expect(fixed.filter((o) => o.kind === 'room').map((o) => o.name).sort()).toEqual(["Cubicle 4'×6'", "Cubicle 6'×6'", "Cubicle 6'×8'"]);
+    expect(fixed.some((o) => o.kind === 'wall' || o.kind === 'door' || o.kind === 'aisle' || o.kind === 'dimension' || o.kind === 'label')).toBe(false);
+    expect(fixed.filter((o) => o.kind === 'furniture' && o.type === 'partition')).toHaveLength(17);
+    expect(fixed.some((o) => o.id === desk.id)).toBe(true);
+    expect(fixed.some((o) => o.kind === 'furniture' && (o.name === 'Dedicated tenant HVAC' || o.name === 'Shelving'))).toBe(false);
+    // The floor plan layouts are untouched.
+    expect(loaded.scenarios[0].objects.length).toBe(p.scenarios[0].objects.length);
+  });
+});

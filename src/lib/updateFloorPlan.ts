@@ -2,8 +2,9 @@
 // the current starter plan in every layout, keeping everything the user placed (cubicles, desks,
 // furniture, aisles, their own labels and dimensions).
 
-import type { PlanObject, Project } from '@/types/plan';
+import type { PlanObject, Project, Scenario } from '@/types/plan';
 import { createSampleProject } from './sampleProject';
+import { isSizesLayout, sampleCubicles } from './sizesLayout';
 
 /**
  * True when an object belongs to the floor plan itself rather than to the user's layout:
@@ -33,13 +34,30 @@ export interface FloorPlanUpdate {
   layouts: number;
 }
 
+function starterNamesOf(starter: PlanObject[]): Set<string> {
+  return new Set([...starter.filter((o) => o.kind !== 'wall' && o.kind !== 'door' && o.kind !== 'room').map((o) => `${o.kind}:${o.name}`), ...PREVIOUS_STARTER_NAMES]);
+}
+
+/** The Cubicle sizes tab has no building: it is only its sample cubicles, their walls and what was tried in them. */
+export function repairSizesLayout(s: Scenario): Scenario {
+  if (!isSizesLayout(s)) return s;
+  const samples = sampleCubicles().filter((o) => o.kind === 'room');
+  const sampleNames = new Set(samples.map((r) => r.name));
+  const starterNames = starterNamesOf(createSampleProject().scenarios[0].objects);
+  const stray = (o: PlanObject) => (o.kind === 'room' ? !sampleNames.has(o.name) : isFloorPlanObject(o, starterNames));
+  const missing = samples.filter((r) => !s.objects.some((o) => o.kind === 'room' && o.name === r.name));
+  if (!missing.length && !s.objects.some(stray)) return s;
+  return { ...s, objects: [...missing, ...s.objects.filter((o) => !stray(o))] };
+}
+
 export function updateFloorPlan(project: Project): FloorPlanUpdate {
   const starter = createSampleProject().scenarios[0].objects;
-  const starterNames = new Set([...starter.filter((o) => o.kind !== 'wall' && o.kind !== 'door' && o.kind !== 'room').map((o) => `${o.kind}:${o.name}`), ...PREVIOUS_STARTER_NAMES]);
+  const starterNames = starterNamesOf(starter);
   const now = new Date().toISOString();
   let kept = 0;
 
   const scenarios = project.scenarios.map((s) => {
+    if (isSizesLayout(s)) return s; // sample cubicles only, no building
     const base = structuredClone(starter) as PlanObject[];
     const newRoomId = new Map(base.filter((o) => o.kind === 'room').map((r) => [r.name, r.id]));
     const oldRoomName = new Map(s.objects.filter((o) => o.kind === 'room').map((r) => [r.id, r.name]));
@@ -55,7 +73,7 @@ export function updateFloorPlan(project: Project): FloorPlanUpdate {
     return { ...s, objects: [...base, ...userObjects], revision: s.revision + 1, updatedAt: now };
   });
 
-  return { project: { ...project, scenarios, updatedAt: now }, kept, layouts: scenarios.length };
+  return { project: { ...project, scenarios, updatedAt: now }, kept, layouts: scenarios.filter((s) => !isSizesLayout(s)).length };
 }
 
 let starterGeometryKey: string | null = null;
@@ -78,5 +96,5 @@ export function floorPlanIsOutdated(project: Project): boolean {
   if (!isTrinity) return false;
   starterGeometryKey ??= geometryKey(createSampleProject().scenarios[0].objects);
   const retired = new Set(PREVIOUS_STARTER_NAMES);
-  return project.scenarios.some((s) => geometryKey(s.objects) !== starterGeometryKey || s.objects.some((o) => retired.has(`${o.kind}:${o.name}`)));
+  return project.scenarios.some((s) => !isSizesLayout(s) && geometryKey(s.objects) !== starterGeometryKey || s.objects.some((o) => retired.has(`${o.kind}:${o.name}`)));
 }
