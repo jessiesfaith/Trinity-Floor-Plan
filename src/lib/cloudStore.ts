@@ -92,7 +92,9 @@ function devFileStore(): PlanStore {
 }
 
 export function planStore(): PlanStore | null {
-  if (process.env.BLOB_READ_WRITE_TOKEN) return blobStore();
+  // A connected Blob store gives either a read-write token or (newer projects) a store id used
+  // with the deployment's own OIDC token; the Blob SDK reads both from the environment.
+  if (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID) return blobStore();
   if (process.env.NODE_ENV !== 'production') return devFileStore();
   return null;
 }

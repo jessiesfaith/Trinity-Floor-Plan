@@ -14,7 +14,11 @@ const json = (body: unknown, status = 200) => Response.json(body, { status, head
 async function gate(req: Request) {
   const expected = configuredPasscode();
   const store = planStore();
-  if (!expected || !store) return { error: json({ error: 'not-configured' }, 503) };
+  if (!expected || !store) {
+    // Say which setting is missing (never its value) so setup problems are easy to spot.
+    const missing = [...(expected ? [] : ['PLAN_PASSCODE']), ...(store ? [] : ['Blob store (BLOB_READ_WRITE_TOKEN or BLOB_STORE_ID)'])];
+    return { error: json({ error: 'not-configured', missing }, 503) };
+  }
   if (!passcodeMatches(req.headers.get('x-plan-passcode'), expected)) {
     await new Promise((r) => setTimeout(r, 600)); // slow down guessing
     return { error: json({ error: 'wrong-passcode' }, 401) };
