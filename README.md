@@ -57,6 +57,27 @@ tables) always show their size on the plan, in presentation view and in exports:
 line along the back (width) and one along a side (depth), like the plan's other dimensions. A round
 table shows its diameter.
 
+## Saving online (every computer sees the same plan)
+
+Click **Save online** (top right of the plan) and enter the team passcode. From then on that
+browser loads the shared online plan and saves every change to it a couple of seconds after it is
+made; other computers pick changes up within about 15 seconds. A save never overwrites a plan saved
+from another computer in the meantime: if both changed, a bar offers **Use the online plan** or
+**Put this computer's plan online**. The first time a browser with its own edited plan connects to
+an online plan that is different, it asks the same question. The plan also stays saved in the
+browser, so it keeps working offline.
+
+Set up once in the Vercel project (the code reads these at runtime):
+
+1. **Storage -> Create -> Blob**, choose **Private** access, and connect it to this project. That
+   adds `BLOB_READ_WRITE_TOKEN`.
+2. **Settings -> Environment Variables**: add `PLAN_PASSCODE` (the team passcode) for Production.
+3. Redeploy so the new settings take effect.
+
+The plan is stored privately in the Blob store (`plans/trinity-floor-plan.json`) and the API
+(`/api/plan`) answers only requests carrying the passcode. Without a Blob token, local development
+keeps the online copy in `.next/dev-online-plan.json` (set `PLAN_PASSCODE` in `.env.local`).
+
 ## Several tabs or windows
 
 The plan autosaves in the browser. Each open planner tab checks before saving that nobody else

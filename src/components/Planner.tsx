@@ -22,6 +22,7 @@ import LeftSidebar from './LeftSidebar';
 import PropertiesPanel from './PropertiesPanel';
 import PlanCanvas from './canvas/PlanCanvas';
 import { ChecklistView } from './ChecklistView';
+import { OnlineButton, OnlineChoiceBar, useOnlineSync } from './OnlineSync';
 import { CubicleCountBox, CubicleFurnitureBox, InventoryLegend, PlanHeader, WallCountBox } from './InventoryLegend';
 import { CapacityDashboard, WarningsList } from './Dashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -79,6 +80,17 @@ export default function Planner() {
     },
     [st, sync],
   );
+  /** Load a plan from the online copy, and keep it in this browser too. */
+  const adoptOnline = useCallback(
+    async (raw: string) => {
+      adopt(raw);
+      await saveSafely(true);
+    },
+    [adopt, saveSafely],
+  );
+
+  // ---- Online saving (shared plan for every computer, with the team passcode).
+  const online = useOnlineSync({ ready, adoptOnline });
 
   // ---- Load: autosave -> manual save -> sample project. An unedited copy of an older starter
   // plan is replaced by the current one, so returning visitors see starter-plan updates.
@@ -292,6 +304,7 @@ export default function Planner() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <Toolbar onSave={save} />
+      <OnlineChoiceBar sync={online} />
       {conflict && (
         <div role="alert" className="flex flex-wrap items-center gap-2 border-b border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-amber-900">
           <span className="font-semibold">This plan was changed somewhere else (another tab or window) while you were editing here.</span>
@@ -370,7 +383,9 @@ export default function Planner() {
               {validation.errorCount ? `${validation.errorCount} conflict${validation.errorCount === 1 ? '' : 's'}` : 'No conflicts'}
             </span>
             {validation.warningCount > 0 && <span className="text-amber-700">{validation.warningCount} warning{validation.warningCount === 1 ? '' : 's'}</span>}
-            <button className="ml-auto text-slate-500 underline-offset-2 hover:text-navy hover:underline" onClick={() => setRightTab('warnings')}>
+            <span className="ml-auto" />
+            <OnlineButton sync={online} />
+            <button className="text-slate-500 underline-offset-2 hover:text-navy hover:underline" onClick={() => setRightTab('warnings')}>
               Review warnings
             </button>
             <button className="rounded border border-slate-300 px-1.5 lg:hidden" onClick={() => { setRightOpen((o) => !o); setLeftOpen(false); }}>
