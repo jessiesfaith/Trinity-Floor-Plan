@@ -183,6 +183,8 @@ export async function exportPdf(p: Project, o: ExportOptions, mode: 'download' |
     doc.text('Target', margin + 7, y);
     doc.text('Conflicts', margin + 8, y);
     y += 0.08;
+    doc.setDrawColor(20, 33, 61);
+    doc.setLineWidth(0.01);
     doc.line(margin, y, Math.min(paper[1] - margin, margin + 9), y);
     for (const r of c.rooms) {
       y += 0.22;

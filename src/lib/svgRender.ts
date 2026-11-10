@@ -153,6 +153,9 @@ export function dimensionGeometry(d: Dimension) {
   return { a2, b2, mid, ang, length: len(sub(d.b, d.a)), n };
 }
 
+/** Narrowest sheet (plan inches) that fits the legend, a readable inventory and the title block. */
+const INFO_MIN_W = 900;
+
 export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: SvgOptions): { svg: string; width: number; height: number } {
   const pad = opts.padding ?? 36;
   const b = opts.bounds ?? contentBounds(objects, opts.background);
@@ -165,7 +168,11 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
     { text: g.area, heading: true },
     ...g.items.map((x) => ({ text: x.item, qty: x.qty == null ? '?' : String(x.qty), size: x.size })),
   ]);
-  const invCols = Math.max(1, Math.min(4, Math.floor(b.width / 300)));
+  // The notes under the plan (legend, inventory, title block) need room even when the drawing is
+  // narrow (e.g. the Cubicle sizes tab): the sheet is at least INFO_MIN_W wide, with the plan centred.
+  const fw = Math.max(b.width, INFO_MIN_W);
+  const fx = b.minX - (fw - b.width) / 2;
+  const invCols = Math.max(1, Math.min(4, Math.floor(fw / 300)));
   const invTotal = invGroups.reduce((n, g) => n + g.length, 0);
   const invTarget = Math.ceil(invTotal / invCols);
   const invColumns: InvLine[][] = [[]];
@@ -176,7 +183,7 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
   }
   const invRows = Math.max(0, ...invColumns.map((c) => c.length));
   const invH = invTotal ? 26 + invRows * 12 + 14 : 0;
-  const vw = b.width + pad * 2;
+  const vw = fw + pad * 2;
   const vh = b.height + pad * 2 + titleH + legendH + headerH + invH;
   const k = opts.pxPerInch ?? 2;
   const pres = opts.view === 'presentation';
@@ -184,9 +191,9 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
   const red = '#d62828';
   const out: string[] = [];
   out.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" overflow="hidden" width="${(vw * k).toFixed(0)}" height="${(vh * k).toFixed(0)}" viewBox="${b.minX - pad} ${b.minY - pad - headerH} ${vw} ${vh}" font-family="Inter, Helvetica, Arial, sans-serif">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" overflow="hidden" width="${(vw * k).toFixed(0)}" height="${(vh * k).toFixed(0)}" viewBox="${fx - pad} ${b.minY - pad - headerH} ${vw} ${vh}" font-family="Inter, Helvetica, Arial, sans-serif">`,
   );
-  out.push(`<rect x="${b.minX - pad}" y="${b.minY - pad - headerH}" width="${vw}" height="${vh}" fill="#ffffff"/>`);
+  out.push(`<rect x="${fx - pad}" y="${b.minY - pad - headerH}" width="${vw}" height="${vh}" fill="#ffffff"/>`);
   if (opts.header) out.push(`<text x="${b.minX + b.width / 2}" y="${b.minY - pad - headerH + 26}" font-size="18" font-weight="bold" text-anchor="middle" fill="#14213d">${esc(opts.header)}</text>`);
 
   const bg = opts.background;
@@ -291,7 +298,7 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
   }
   let y = b.maxY + pad;
   if (opts.showLegend) {
-    const x0 = b.minX;
+    const x0 = fx;
     const items: [string, string][] = [
       ['#14213d', 'Wall'],
       ['#cfe8e7', 'Workstation'],
@@ -307,11 +314,11 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
     y += legendH;
   }
   if (invTotal) {
-    const colW = b.width / invCols;
-    out.push(`<text x="${b.minX}" y="${y}" font-size="11" font-weight="bold" fill="${stroke}">Furniture inventory</text>`);
+    const colW = fw / invCols;
+    out.push(`<text x="${fx}" y="${y}" font-size="11" font-weight="bold" fill="${stroke}">Furniture inventory</text>`);
     invColumns.forEach((col, ci) =>
       col.forEach((l, i) => {
-        const x = b.minX + ci * colW;
+        const x = fx + ci * colW;
         const ly = y + 22 + i * 12;
         if (l.heading) out.push(`<text x="${x}" y="${ly}" font-size="8.5" font-weight="bold" fill="#0f766e">${esc(l.text.toUpperCase())}</text>`);
         else
@@ -323,8 +330,8 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
     y += invH;
   }
   if (opts.titleBlock?.length) {
-    out.push(`<rect x="${b.minX}" y="${y}" width="${b.width}" height="${titleH - 8}" fill="#14213d"/>`);
-    opts.titleBlock.forEach((t, i) => out.push(`<text x="${b.minX + 10}" y="${y + 18 + i * 18}" font-size="${i === 0 ? 12 : 9}" font-weight="${i === 0 ? 'bold' : 'normal'}" fill="#ffffff">${esc(t)}</text>`));
+    out.push(`<rect x="${fx}" y="${y}" width="${fw}" height="${titleH - 8}" fill="#14213d"/>`);
+    opts.titleBlock.forEach((t, i) => out.push(`<text x="${fx + 10}" y="${y + 18 + i * 18}" font-size="${i === 0 ? 12 : 9}" font-weight="${i === 0 ? 'bold' : 'normal'}" fill="#ffffff">${esc(t)}</text>`));
   }
   out.push('</svg>');
   return { svg: out.join(''), width: vw * k, height: vh * k };
