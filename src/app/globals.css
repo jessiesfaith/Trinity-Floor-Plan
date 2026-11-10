@@ -16,3 +16,68 @@ body {
 .panel-title {
   @apply mb-2 text-xs font-bold uppercase tracking-wider text-navy;
 }
+
+/* Checklist printing: the Checklist tab adds a printer-friendly copy to the page; when it is
+   there, printing shows only that copy (every item, across as many pages as needed). */
+.checklist-print {
+  display: none;
+}
+@media print {
+  html:has(.checklist-print),
+  body:has(> .checklist-print) {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  body:has(> .checklist-print) > *:not(.checklist-print) {
+    display: none !important;
+  }
+  .checklist-print {
+    display: block;
+    color: #000;
+    font-size: 11pt;
+    line-height: 1.35;
+  }
+  .checklist-print h1 {
+    margin: 0 0 2pt;
+    font-size: 16pt;
+    font-weight: 700;
+  }
+  .checklist-print .meta {
+    margin: 0 0 10pt;
+    font-size: 9pt;
+    color: #444;
+  }
+  .checklist-print ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .checklist-print li {
+    display: flex;
+    gap: 8pt;
+    padding: 4pt 0;
+    border-bottom: 0.5pt solid #ccc;
+    break-inside: avoid;
+  }
+  .checklist-print .box {
+    flex: none;
+    width: 11pt;
+    height: 11pt;
+    margin-top: 1pt;
+    border: 1pt solid #000;
+    font-size: 9pt;
+    line-height: 10pt;
+    text-align: center;
+  }
+  .checklist-print .text {
+    white-space: pre-wrap;
+  }
+  .checklist-print li.done .text {
+    color: #666;
+    text-decoration: line-through;
+  }
+  @page {
+    margin: 0.6in;
+  }
+}

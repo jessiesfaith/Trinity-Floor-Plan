@@ -4,7 +4,8 @@
 // Items are saved with the plan (autosave, Save, Export) and every change can be undone.
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ArrowDown, ArrowUp, Plus, Printer, Trash2 } from 'lucide-react';
 import { usePlanStore } from '@/store/usePlanStore';
 import type { ChecklistItem } from '@/types/plan';
 import { addChecklistItem, deleteChecklistItem, moveChecklistItem, updateChecklistItem } from '@/lib/checklist';
@@ -39,14 +40,24 @@ export function ChecklistView() {
     return id;
   };
   const done = list.filter((x) => x.done).length;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <div className="absolute inset-0 z-30 overflow-y-auto bg-slate-50">
       <div className="mx-auto max-w-2xl px-4 py-6">
         <div className="mb-3 flex items-baseline justify-between">
           <h2 className="text-lg font-semibold text-navy">Checklist</h2>
-          <span className="text-xs text-slate-500">
+          <span className="flex items-center gap-3 text-xs text-slate-500">
             {list.length ? `${done} of ${list.length} done` : 'No items yet'}
+            <button
+              className="flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 font-semibold text-navy hover:bg-slate-100 disabled:opacity-40"
+              disabled={!list.length}
+              title="Print the checklist"
+              onClick={() => window.print()}
+            >
+              <Printer className="h-3.5 w-3.5" /> Print
+            </button>
           </span>
         </div>
         <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -127,6 +138,28 @@ export function ChecklistView() {
           Click any item to edit its text. Enter adds a new item below; Backspace on an empty item deletes it. The checklist is saved with the plan; the toolbar's Undo takes back a change.
         </p>
       </div>
+      {mounted && createPortal(<ChecklistPrint list={list} done={done} />, document.body)}
+    </div>
+  );
+}
+
+/** Printer-friendly copy of the checklist; only shown when printing (see globals.css). */
+function ChecklistPrint({ list, done }: { list: ChecklistItem[]; done: number }) {
+  const name = usePlanStore((s) => s.project.name);
+  return (
+    <div className="checklist-print">
+      <h1>{name ? `${name} – Checklist` : 'Checklist'}</h1>
+      <p className="meta">
+        {done} of {list.length} done · Printed {new Date().toLocaleDateString()}
+      </p>
+      <ol>
+        {list.map((x) => (
+          <li key={x.id} className={x.done ? 'done' : undefined}>
+            <span className="box">{x.done ? '✓' : ''}</span>
+            <span className="text">{x.text}</span>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

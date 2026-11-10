@@ -22,6 +22,7 @@ import LeftSidebar from './LeftSidebar';
 import PropertiesPanel from './PropertiesPanel';
 import PlanCanvas from './canvas/PlanCanvas';
 import { ChecklistView } from './ChecklistView';
+import { nameForNew } from '@/lib/cubicleNumbers';
 import { OnlineButton, OnlineChoiceBar, useOnlineSync } from './OnlineSync';
 import { CubicleCountBox, CubicleFurnitureBox, InventoryLegend, PlanHeader, WallCountBox } from './InventoryLegend';
 import { CapacityDashboard, WarningsList } from './Dashboard';
@@ -227,8 +228,7 @@ export default function Planner() {
       // In the Cubicle walls tab, keep new pieces inside Area A / Area B (the rest is hidden there).
       if (isWallsLayout(activeScenario(st().project))) at = placeInSections(objs, at);
       const room = roomAt(objs, at);
-      const n = objs.filter((o) => o.kind === 'furniture' && o.type === t.type).length + 1;
-      const name = t.type === 'cubicle' ? `Cubicle ${String(n).padStart(2, '0')}` : t.type === 'phone-booth' ? `Phone booth ${n}` : t.label;
+      const name = nameForNew(objs, t.type, t.label);
       const f = furnitureFromTemplate(t, at.x, at.y, name);
       if (room?.planning?.department && f.isWorkstation) f.department = room.planning.department;
       st().addObjects([f]);

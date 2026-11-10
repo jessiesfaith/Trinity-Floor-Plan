@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import type { Background, LayerId, PlanObject, PlanSettings, Project, Scenario } from '@/types/plan';
 import { cloneObject, translateObject, uid } from '@/lib/objects';
+import { numberCopies } from '@/lib/cubicleNumbers';
 import { createBlankProject } from '@/lib/sampleProject';
 import type { ValidationResult } from '@/lib/validation';
 
@@ -180,7 +181,7 @@ export const usePlanStore = create<PlanState>((set, get) => ({
       }
       return c;
     });
-    get().addObjects(copies);
+    get().addObjects(numberCopies(activeScenario(project).objects, copies));
   },
 
   moveSelected: (dx, dy) => {

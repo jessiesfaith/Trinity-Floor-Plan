@@ -3,6 +3,7 @@
 
 import { isWallsLayout, withOffice1Suggestion } from './wallsLayout';
 import { repairSizesLayout } from './updateFloorPlan';
+import { renumberDuplicates } from './cubicleNumbers';
 import { TRINITY_ADDRESS, isTrinityProject, trinityInventory, upgradeInventory } from './inventory';
 import type { Project } from '@/types/plan';
 import { DEFAULT_LAYERS, DEFAULT_SETTINGS } from './sampleProject';
@@ -93,7 +94,7 @@ export function parseProject(text: string): Project {
     settings: { ...DEFAULT_SETTINGS, ...(p.settings ?? {}) },
     layers,
     background: bg,
-    scenarios: p.scenarios.map((s) => (isWallsLayout(s) ? withOffice1Suggestion(s) : repairSizesLayout(s))),
+    scenarios: p.scenarios.map((s) => renumberDuplicates(isWallsLayout(s) ? withOffice1Suggestion(s) : repairSizesLayout(s))),
     activeScenarioId: p.scenarios.some((s) => s.id === p.activeScenarioId) ? p.activeScenarioId! : p.scenarios[0].id,
     customTemplates: p.customTemplates ?? [],
     employees: p.employees ?? [],
