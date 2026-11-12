@@ -5,6 +5,10 @@
 import type { PlanObject, Project, Scenario } from '@/types/plan';
 import { createSampleProject } from './sampleProject';
 import { isSizesLayout, sampleCubicles } from './sizesLayout';
+import { isOldOfficeLayout } from './oldOfficeLayout';
+
+/** Layouts with no Trinity suite in them (sample cubicles, the old office): never updated. */
+const notSuite = (s: Scenario) => isSizesLayout(s) || isOldOfficeLayout(s);
 
 /**
  * True when an object belongs to the floor plan itself rather than to the user's layout:
@@ -60,7 +64,7 @@ export function updateFloorPlan(project: Project): FloorPlanUpdate {
   let kept = 0;
 
   const scenarios = project.scenarios.map((s) => {
-    if (isSizesLayout(s)) return s; // sample cubicles only, no building
+    if (notSuite(s)) return s; // sample cubicles / the old office: no Trinity suite
     const base = structuredClone(starter) as PlanObject[];
     const newRoomId = new Map(base.filter((o) => o.kind === 'room').map((r) => [r.name, r.id]));
     const oldRoomName = new Map(s.objects.filter((o) => o.kind === 'room').map((r) => [r.id, r.name]));
@@ -76,7 +80,7 @@ export function updateFloorPlan(project: Project): FloorPlanUpdate {
     return { ...s, objects: [...base, ...userObjects], revision: s.revision + 1, updatedAt: now };
   });
 
-  return { project: { ...project, scenarios, updatedAt: now }, kept, layouts: scenarios.filter((s) => !isSizesLayout(s)).length };
+  return { project: { ...project, scenarios, updatedAt: now }, kept, layouts: scenarios.filter((s) => !notSuite(s)).length };
 }
 
 let starterGeometryKey: string | null = null;
@@ -99,5 +103,5 @@ export function floorPlanIsOutdated(project: Project): boolean {
   if (!isTrinity) return false;
   starterGeometryKey ??= geometryKey(createSampleProject().scenarios[0].objects);
   const retired = new Set(PREVIOUS_STARTER_NAMES);
-  return project.scenarios.some((s) => !isSizesLayout(s) && geometryKey(s.objects) !== starterGeometryKey || s.objects.some((o) => retired.has(`${o.kind}:${o.name}`)));
+  return project.scenarios.some((s) => !notSuite(s) && geometryKey(s.objects) !== starterGeometryKey || s.objects.some((o) => retired.has(`${o.kind}:${o.name}`)));
 }

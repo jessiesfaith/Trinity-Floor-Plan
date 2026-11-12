@@ -22,8 +22,8 @@ export function wallsLayoutOf(p: Project): Scenario | undefined {
 export function floorPlanLayoutOf(p: Project): Scenario {
   const walls = wallsLayoutOf(p);
   const active = p.scenarios.find((s) => s.id === p.activeScenarioId);
-  // The tabs' own layouts (Cubicle walls, Cubicle sizes) are never the floor plan.
-  const ordinary = (s: Scenario) => !isWallsLayout(s) && s.purpose !== 'cubicle-sizes';
+  // The tabs' own layouts (Cubicle walls, Cubicle sizes, Old office) are never the floor plan.
+  const ordinary = (s: Scenario) => !isWallsLayout(s) && s.purpose !== 'cubicle-sizes' && s.purpose !== 'old-office';
   if (active && ordinary(active)) return active;
   return (
     (walls?.sourceId && p.scenarios.find((s) => s.id === walls.sourceId)) ||

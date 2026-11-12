@@ -14,6 +14,7 @@ import { rotateObjects } from '@/lib/orientation';
 import { inventoryKey, LONG_WALL, LONG_WALL_COLOR, SHORT_WALL, SHORT_WALL_COLOR } from '@/lib/cubicleParts';
 import { isWallsLayout, openCubicleWalls, openFloorPlan, placeInSections } from '@/lib/wallsLayout';
 import { isSizesLayout, openCubicleSizes } from '@/lib/sizesLayout';
+import { isOldOfficeLayout, openOldOffice } from '@/lib/oldOfficeLayout';
 import { BUILD_ID, isStaleAssetError, liveBuild, reloadOnce } from '@/lib/freshVersion';
 import { createSaveSync } from '@/lib/saveSync';
 import type { Project } from '@/types/plan';
@@ -203,7 +204,7 @@ export default function Planner() {
   // ---- Validation + capacity (deferred so dragging stays smooth).
   const scenario = activeScenario(project);
   const inWalls = isWallsLayout(scenario);
-  const layoutTab = inWalls ? 'walls' : isSizesLayout(scenario) ? 'sizes' : 'plan';
+  const layoutTab = inWalls ? 'walls' : isSizesLayout(scenario) ? 'sizes' : isOldOfficeLayout(scenario) ? 'old' : 'plan';
   const currentTab = checklistOpen ? 'checklist' : layoutTab;
   const wallCount = (key: string) => scenario.objects.filter((o) => o.kind === 'furniture' && o.inventoryItem === key).length;
   const owned = (key: string) => project.inventory?.find((x) => inventoryKey(x) === key)?.qty;
@@ -342,7 +343,7 @@ export default function Planner() {
             </button>
             {/* Tabs: the floor plan, the cubicle walls of the cube areas, or sample cubicle sizes */}
             <div className="flex overflow-hidden rounded border border-slate-300" role="tablist" aria-label="View">
-              {(['plan', 'walls', 'sizes', 'checklist'] as const).map((t) => (
+              {(['plan', 'walls', 'sizes', 'old', 'checklist'] as const).map((t) => (
                 <button
                   key={t}
                   role="tab"
@@ -357,11 +358,11 @@ export default function Planner() {
                     }
                     setChecklistOpen(false);
                     if (t === layoutTab) return;
-                    st().commit((p) => (t === 'walls' ? openCubicleWalls(p) : t === 'sizes' ? openCubicleSizes(p) : openFloorPlan(p)));
+                    st().commit((p) => (t === 'walls' ? openCubicleWalls(p) : t === 'sizes' ? openCubicleSizes(p) : t === 'old' ? openOldOffice(p) : openFloorPlan(p)));
                     st().select([]);
                   }}
                 >
-                  {t === 'plan' ? 'Floor plan' : t === 'walls' ? 'Cubicle walls' : t === 'sizes' ? 'Cubicle sizes' : 'Checklist'}
+                  {t === 'plan' ? 'Floor plan' : t === 'walls' ? 'Cubicle walls' : t === 'sizes' ? 'Cubicle sizes' : t === 'old' ? 'Old office' : 'Checklist'}
                 </button>
               ))}
             </div>

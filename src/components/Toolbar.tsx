@@ -90,7 +90,7 @@ export default function Toolbar({ onSave }: { onSave: () => void }) {
           variant="toolbar"
           title="Replace the walls, rooms and doors with the latest floor plan, keeping your cubicles, furniture, aisles and notes"
           onClick={() => {
-            const n = st().project.scenarios.filter((s) => s.purpose !== 'cubicle-sizes').length;
+            const n = st().project.scenarios.filter((s) => s.purpose !== 'cubicle-sizes' && s.purpose !== 'old-office').length;
             const ok = confirm(
               `Update to the latest floor plan?
 

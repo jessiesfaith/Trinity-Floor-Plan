@@ -227,7 +227,7 @@ export interface Scenario {
   description: string;
   objects: PlanObject[];
   /** 'cubicle-walls': the Cubicle walls tab's layout (cubicles as loose cube walls). */
-  purpose?: 'cubicle-walls' | 'cubicle-sizes';
+  purpose?: 'cubicle-walls' | 'cubicle-sizes' | 'old-office';
   /** For the walls layout: the floor plan layout it was made from. */
   sourceId?: string;
   /** For the walls layout: the suggested Office 1 furniture has been placed once. */

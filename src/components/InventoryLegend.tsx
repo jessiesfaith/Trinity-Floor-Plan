@@ -16,7 +16,10 @@ import { cubicleContents, cubicleStock, isSizesLayout, type StockRow } from '@/l
 const st = usePlanStore.getState;
 
 export function PlanHeader() {
-  const address = usePlanStore((s) => s.project.address);
+  const suite = usePlanStore((s) => s.project.address);
+  const old = usePlanStore((s) => activeScenario(s.project).purpose === 'old-office');
+  // The Old office tab is not the new suite, so it does not carry the suite's address.
+  const address = old ? 'Old office (moving from)' : suite;
   if (!address) return null;
   return (
     <div className="pointer-events-none absolute left-2 top-2 z-10 max-w-[calc(100%-14rem)] truncate rounded-md bg-navy/90 px-3 py-1 text-sm font-semibold text-white shadow sm:max-w-[calc(100%-24rem)]">
