@@ -28,13 +28,31 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     expect(b.height / 12).toBeCloseTo(14, 2);
   });
 
-  it('Office 1 is a clear right triangle with its door wall (13 ft measured + 2 ft pushed out) running straight up to the main entry', () => {
+  it('Office 1 has its door wall (13 ft measured + 2 ft pushed out) up to the main entry, a flat top wall, and is 7 ft wide across the middle', () => {
     const r = room('Office 1');
     const pts = r.points.map((q) => ({ x: q.x / 12, y: q.y / 12 }));
-    expect(pts).toHaveLength(3);
+    expect(pts).toHaveLength(4);
     const b = bbox(pts);
-    expect(b.height).toBeCloseTo(15, 2); // door wall (runs across the suite)
+    // Door wall: 15' from the bottom wall to where the old angled corner was, plus about 5" more now
+    // that the top is the flat wall on the entry wall's line.
+    expect(b.height).toBeGreaterThan(15.4);
+    expect(b.height).toBeLessThan(15.5);
     expect(pts.some((q) => Math.abs(q.x - b.minX) < 1e-6 && Math.abs(q.y - b.maxY) < 1e-6)).toBe(true); // right angle
+    // Flat top: two corners level at the top, the right one out from the door wall.
+    const top = pts.filter((q) => Math.abs(q.y - b.minY) < 1e-6);
+    expect(top).toHaveLength(2);
+    expect(Math.max(...top.map((q) => q.x)) - b.minX).toBeGreaterThan(1);
+    // 7'-0" clear across the middle, with a dimension line showing it.
+    const midY = (b.minY + b.maxY) / 2;
+    const xs: number[] = [];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i];
+      const c = pts[(i + 1) % pts.length];
+      if ((a.y - midY) * (c.y - midY) < 0) xs.push(a.x + ((c.x - a.x) * (midY - a.y)) / (c.y - a.y));
+    }
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(7, 2);
+    const dim = objs.find((o) => o.kind === 'dimension' && o.name === "Office 1 width (7')");
+    expect(dim && dim.kind === 'dimension' && Math.hypot(dim.b.x - dim.a.x, dim.b.y - dim.a.y) / 12).toBeCloseTo(7, 2);
     expect(objs.some((o) => o.kind === 'door' && o.name === 'Office 1 door')).toBe(true);
   });
 
@@ -63,17 +81,20 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
   });
 
   it('cubicle areas match the marked 12 x 16 and 12 x 22 dimensions', () => {
-    expect(roomArea(room('Area A')) / 144).toBeCloseTo(16 * (14 + 8 / 12), 1); // 16' x 14'-8", walkway to the top wall
+    expect(roomArea(room('Area A')) / 144).toBeCloseTo(16 * 12, 1); // 16' x 12', from the top wall
+    // Area A ends level with IT / Storage (both 12' deep from the top wall).
+    expect(bbox(room('Area A').points).maxY).toBeCloseTo(bbox(room('IT / Storage').points).maxY, 1);
     expect(roomArea(room('Area B')) / 144).toBeCloseTo(264, 1);
   });
 
-  it('has a 5 ft walkway from the conference room to Area A, and an open kitchenette with one long counter', () => {
+  it('has a 7 ft walkway from the conference room toward Area A, and an open kitchenette with one long counter', () => {
     const conf = bbox(room('Conference Room').points);
-    const a = bbox(room('Area A').points);
     const confTopFace = conf.minY - 5; // the conference room's clear top edge, minus its 5" wall
-    expect((confTopFace - a.maxY) / 12).toBeCloseTo(5, 2);
-    const walk = objs.find((o) => o.kind === 'aisle' && o.name === "Walkway (5')");
-    expect(walk && walk.kind === 'aisle' && walk.depth / 12).toBeCloseTo(5, 2);
+    const walk = objs.find((o) => o.kind === 'aisle' && o.name === "Walkway (7')");
+    if (!walk || walk.kind !== 'aisle') throw new Error('no walkway');
+    expect(walk.depth / 12).toBeCloseTo(7, 2);
+    expect((confTopFace - (walk.y + walk.depth / 2)) / 12).toBeCloseTo(0, 2); // starts at the conference room
+    expect(objs.some((o) => o.kind === 'aisle' && o.name === "Walkway (5')")).toBe(false);
     // Area B runs up to the kitchenette wall: its top edge is the wall's 5" away from the kitchen floor.
     const b = bbox(room('Area B').points);
     const k = bbox(room('Kitchen').points);

@@ -98,6 +98,6 @@ describe('validation', () => {
     const p = createSampleProject();
     const rooms = p.scenarios[0].objects.filter((o): o is Room => o.kind === 'room' && o.roomType === 'cubicle-area');
     const areas = rooms.map((r) => Math.round(Math.abs(r.points.reduce((a, q, i) => a + (q.x * r.points[(i + 1) % 4].y - r.points[(i + 1) % 4].x * q.y), 0) / 2) / 144));
-    expect(areas.sort()).toEqual([235, 264]);
+    expect(areas.sort()).toEqual([192, 264]);
   });
 });

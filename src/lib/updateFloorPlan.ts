@@ -31,6 +31,8 @@ const PREVIOUS_STARTER_NAMES = [
   // Earlier kitchen fixtures, now one "Kitchen counter".
   'furniture:Kitchen counter (sink)',
   'furniture:Sink',
+  // The walkway was 5' before it became 7' (Nov 2026).
+  "aisle:Walkway (5')",
 ];
 
 export interface FloorPlanUpdate {

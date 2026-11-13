@@ -129,7 +129,7 @@ export function placeInSections(objects: PlanObject[], p: Pt): Pt {
  */
 export function office1Furniture(objects: PlanObject[]): PlanObject[] {
   const room = objects.find((o): o is Room => o.kind === 'room' && o.name === 'Office 1');
-  if (!room || room.points.length !== 3) return [];
+  if (!room || room.points.length < 3 || room.points.length > 4) return [];
   const xs = room.points.map((p) => p.x);
   const ys = room.points.map((p) => p.y);
   const minX = Math.min(...xs);
@@ -137,15 +137,17 @@ export function office1Furniture(objects: PlanObject[]): PlanObject[] {
   const maxX = Math.max(...xs);
   const maxY = Math.max(...ys);
   const tpl = (id: string) => BUILT_IN_TEMPLATES.find((t) => t.id === id)!;
-  // Right angle at (minX, maxY); straight wall up from it to (minX, minY); angled wall from there to (maxX, maxY).
-  const a = maxY - minY;
-  const b = maxX - minX;
+  // Right angle at (minX, maxY); straight wall up from it to (minX, minY). The angled wall runs down
+  // to (maxX, maxY) from the top corner, or from the end of a short flat top wall when there is one.
+  const topRight = room.points.filter((p) => Math.abs(p.y - minY) < 1).reduce((m, p) => (p.x > m.x ? p : m));
+  const a = maxY - topRight.y;
+  const b = maxX - topRight.x;
   // The table sits up and out from the door's swing (door near the bottom of the straight wall),
   // clear of the whiteboard and the angled wall.
   const table = furnitureFromTemplate(tpl('round-table-42'), minX + 30, maxY - 70, 'Office 1 round table');
   const board = furnitureFromTemplate(tpl('whiteboard-6'), minX + 1.5, minY + 12 + 36, 'Office 1 whiteboard', 270);
   const tvT = tpl('tv-65');
-  const mid = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+  const mid = { x: (topRight.x + maxX) / 2, y: (topRight.y + maxY) / 2 };
   const d = { x: b / Math.hypot(a, b), y: a / Math.hypot(a, b) };
   let n = { x: -d.y, y: d.x }; // a normal to the angled wall
   if ((table.x - mid.x) * n.x + (table.y - mid.y) * n.y < 0) n = { x: -n.x, y: -n.y }; // point it into the room

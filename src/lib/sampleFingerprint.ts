@@ -49,7 +49,7 @@ export function projectFingerprint(project: unknown): string {
  * src/lib/sampleProject.ts changes, the test fails: move this value to the end of
  * PREVIOUS_SAMPLE_FINGERPRINTS and set this to the new value the test prints.
  */
-export const CURRENT_SAMPLE_FINGERPRINT = '375850d29158c9b0';
+export const CURRENT_SAMPLE_FINGERPRINT = 'cabc108a74f7cf68';
 
 /** Fingerprints of the starter plan as shipped in earlier releases, oldest first. */
 export const PREVIOUS_SAMPLE_FINGERPRINTS: readonly string[] = [
@@ -71,6 +71,7 @@ export const PREVIOUS_SAMPLE_FINGERPRINTS: readonly string[] = [
   '064f19a6cfe959ef', // 7172570 – Office 1 door wall 14'
   '6355b0b1bb2e36f9', // cd6e969 – long kitchen counter, no kitchen walls, exit door swings in
   '25ed1bbd761c5ef2', // fc707d5 – 5' kitchen counter from the left wall
+  '375850d29158c9b0', // f6c3eac – one middle kitchen counter
 ];
 
 /** True when a stored project (parsed JSON, as saved) is an unedited copy of an earlier starter plan. */
