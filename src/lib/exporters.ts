@@ -47,7 +47,9 @@ function titleLines(p: Project, o: ExportOptions): string[] {
   const s = activeScenario(p);
   const v = validate(s.objects, p.settings, { background: p.background });
   const c = computeCapacity(s.objects, v);
-  const lines = [`${p.name}${p.address ? ` · ${p.address}` : ''} — ${s.name}`];
+  // The Old office is not the new suite: its pages do not carry the suite's address.
+  const where = s.purpose === 'old-office' ? ' · Old office (moving from)' : p.address ? ` · ${p.address}` : '';
+  const lines = [`${p.name}${where} — ${s.name}`];
   if (o.showVersionAndDate) lines.push(`Layout version r${s.revision} · Exported ${new Date().toLocaleString()} · ${o.printScale ? `Scale ${scaleLabel(o.printScale)}` : 'Not to scale'}`);
   if (o.showSeatCounts) lines.push(`Workstations ${c.totalWorkstations} · Seats ${c.totalSeats} (feasible ${c.feasibleSeats}) · Conflicts ${c.conflicts}`);
   if (o.showRoomAreas)
@@ -73,7 +75,7 @@ export function buildSvg(p: Project, o: ExportOptions, extra: Partial<SvgOptions
     background: o.includeBackground ? p.background : undefined,
     layers: p.layers,
     titleBlock: titleLines(p, o),
-    header: p.address || undefined,
+    header: s.purpose === 'old-office' ? 'Old office (moving from)' : p.address || undefined,
     inventory: o.showInventory ? p.inventory : undefined,
     ...extra,
   });
@@ -123,7 +125,10 @@ const PAPERS: [string, number, number][] = [
   ['arch e', 48, 36],
 ];
 
-export async function exportPdf(p: Project, o: ExportOptions, mode: 'download' | 'print' = 'download') {
+type Pdf = InstanceType<(typeof import('jspdf'))['jsPDF']>;
+
+/** Add one layout's pages (the plan, then its area & capacity table) to a PDF, starting a new page unless `doc` is empty. */
+async function addLayoutPages(doc: Pdf | null, p: Project, o: ExportOptions): Promise<Pdf> {
   const { jsPDF } = await import('jspdf');
   const s = activeScenario(p);
   const { svg, width, height } = buildSvg(p, o, { pxPerInch: 2 });
@@ -148,8 +153,8 @@ export async function exportPdf(p: Project, o: ExportOptions, mode: 'download' |
       imgW = imgH * ar;
     }
   }
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'in', format: [paper[1], paper[2]] });
-  doc.setProperties({ title: `${p.name} — ${s.name}`, subject: 'Office floor plan', creator: 'Trinity Floor Plan' });
+  if (doc) doc.addPage([paper[1], paper[2]], 'landscape');
+  else doc = new jsPDF({ orientation: 'landscape', unit: 'in', format: [paper[1], paper[2]] });
   doc.addImage(png, 'PNG', margin, margin, imgW, imgH, undefined, 'FAST');
   doc.setFontSize(7);
   doc.setTextColor(214, 40, 40);
@@ -203,13 +208,33 @@ export async function exportPdf(p: Project, o: ExportOptions, mode: 'download' |
     y += 0.25;
     if (p.background && !p.background.calibrated) doc.text('WARNING: the imported floor plan is not calibrated.', margin, y);
   }
-  const name = `${safeFileName(p.name)}_${safeFileName(s.name)}.pdf`;
+  return doc;
+}
+
+function finishPdf(doc: Pdf, title: string, fileName: string, mode: 'download' | 'print') {
+  doc.setProperties({ title, subject: 'Office floor plan', creator: 'Trinity Floor Plan' });
   if (mode === 'print') {
     doc.autoPrint();
     window.open(doc.output('bloburl'), '_blank');
   } else {
-    doc.save(name);
+    doc.save(fileName);
   }
+}
+
+/** PDF of the active layout (plan + area & capacity table). */
+export async function exportPdf(p: Project, o: ExportOptions, mode: 'download' | 'print' = 'download') {
+  const s = activeScenario(p);
+  const doc = await addLayoutPages(null, p, o);
+  finishPdf(doc, `${p.name} — ${s.name}`, `${safeFileName(p.name)}_${safeFileName(s.name)}.pdf`, mode);
+}
+
+/** One PDF with several layouts, in order (e.g. the floor plan and the old office). */
+export async function exportPdfLayouts(p: Project, o: ExportOptions, scenarioIds: string[], mode: 'download' | 'print' = 'download') {
+  let doc: Pdf | null = null;
+  for (const id of scenarioIds) doc = await addLayoutPages(doc, { ...p, activeScenarioId: id }, o);
+  if (!doc) return;
+  const names = scenarioIds.map((id) => p.scenarios.find((x) => x.id === id)?.name ?? '').filter(Boolean);
+  finishPdf(doc, `${p.name} — ${names.join(' + ')}`, `${safeFileName(p.name)}_${names.map(safeFileName).join('_and_')}.pdf`, mode);
 }
 
 export { contentBounds };

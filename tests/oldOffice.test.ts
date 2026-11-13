@@ -87,3 +87,16 @@ describe('Old office tab', () => {
     expect(oldOfficeLayoutOf(back)?.objects.length).toBe(oldOfficeLayoutOf(p)!.objects.length);
   });
 });
+
+describe('Old office printout', () => {
+  it("does not carry the new suite's address; the floor plan still does", async () => {
+    const { buildSvg, DEFAULT_EXPORT } = await import('@/lib/exporters');
+    const p = openOldOffice(createSampleProject());
+    expect(p.address).toBeTruthy();
+    const old = buildSvg(p, DEFAULT_EXPORT).svg;
+    expect(old).toContain('Old office (moving from)');
+    expect(old).not.toContain(p.address!);
+    const plan = buildSvg(openFloorPlan(p), DEFAULT_EXPORT).svg;
+    expect(plan).toContain(p.address!);
+  });
+});

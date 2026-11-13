@@ -6,7 +6,9 @@ import { usePlanStore } from '@/store/usePlanStore';
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label, Select, Switch } from '../ui/input';
-import { canPrintToScale, DEFAULT_EXPORT, exportPdf, exportPng, exportSvg, type ExportOptions } from '@/lib/exporters';
+import { canPrintToScale, DEFAULT_EXPORT, exportPdf, exportPdfLayouts, exportPng, exportSvg, type ExportOptions } from '@/lib/exporters';
+import { oldOfficeLayoutOf } from '@/lib/oldOfficeLayout';
+import { floorPlanLayoutOf } from '@/lib/wallsLayout';
 import { downloadBlob, safeFileName, serializeProject } from '@/lib/persistence';
 
 export default function ExportDialog() {
@@ -30,6 +32,9 @@ export default function ExportDialog() {
     }
   };
   const opts = { ...o, view: o.view ?? view };
+  // Floor plan + Old office in one PDF, when the project has an Old office tab.
+  const oldOffice = oldOfficeLayoutOf(project);
+  const both = oldOffice ? [floorPlanLayoutOf(project).id, oldOffice.id] : null;
   return (
     <Dialog open={open} onOpenChange={(v) => st().openDialog(v ? 'export' : null)}>
       <DialogContent>
@@ -71,6 +76,16 @@ export default function ExportDialog() {
             <Button disabled={!!busy} variant="outline" onClick={() => run('png', () => exportPng(project, opts))}><FileImage /> High-res PNG</Button>
             <Button disabled={!!busy} variant="outline" onClick={() => run('svg', () => exportSvg(project, opts))}><FileCode2 /> SVG</Button>
           </div>
+          {both && (
+            <div className="rounded border border-slate-200 p-2">
+              <div className="mb-1 font-semibold text-navy">Floor plan + Old office</div>
+              <p className="mb-1.5 text-[11px] text-slate-500">Both plans in one PDF, each followed by its area &amp; capacity page.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button disabled={!!busy} onClick={() => run('pdf2', () => exportPdfLayouts(project, opts, both))}><FileText /> {busy === 'pdf2' ? 'Building…' : 'PDF (both)'}</Button>
+                <Button disabled={!!busy} variant="navy" onClick={() => run('print2', () => exportPdfLayouts(project, opts, both, 'print'))}><Printer /> {busy === 'print2' ? 'Building…' : 'Print both'}</Button>
+              </div>
+            </div>
+          )}
           <div className="rounded border border-slate-200 p-2">
             <div className="mb-1 font-semibold text-navy">Editable project file</div>
             <Switch checked={includeBgJson} label="Embed imported PDF / image" onChange={setIncludeBgJson} />
