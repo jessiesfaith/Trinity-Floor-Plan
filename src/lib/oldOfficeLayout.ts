@@ -14,7 +14,7 @@ export const isOldOfficeLayout = (s: Scenario) => s.purpose === OLD_OFFICE_PURPO
 export const oldOfficeLayoutOf = (p: Project) => p.scenarios.find(isOldOfficeLayout);
 
 /** Bump when the drawing below changes, so saved Old office tabs get redrawn by Update floor plan. */
-export const OLD_OFFICE_VERSION = 6;
+export const OLD_OFFICE_VERSION = 7;
 
 const ROUGH = 'Approximate: drawn from the hand sketch, not measured yet.';
 const P = (x: number, y: number): Pt => ({ x: x * 12, y: y * 12 }); // feet -> plan inches
@@ -47,12 +47,13 @@ export function oldOfficeObjects(): PlanObject[] {
   const Y4 = Y3 - IW - 10 - IW; // Office 4 / Office 3 wall
   const Y5 = Y4 - IW - 10 - IW; // Office 5 / Office 4 wall
   const TOP = Y5 - IW - 12 - EXT; // top outside wall
-  // Office 1 (measured 13' x 11'): 11'-0" wide x 13'-0" deep clear, left of the lobby wall at x 10.
-  // Conference Room 1 sits right below it, lined up with its left wall, down to the same bottom
-  // wall as before.
+  // Office 1 (measured): 13'-0" wide x 11'-0" deep clear. Its left wall lines up with Conference
+  // Room 1's; its right wall (with its door) faces the lobby. Conference Room 1 sits right below it,
+  // down to the same bottom wall as before, and reaches past Office 1 far enough for its top door.
   const O1L = 10 - IW - 11 - EXT; // outside wall on the left of Office 1 and Conference Room 1
-  const O1B = ROW + EXT + 13 + IW; // wall between Office 1 and Conference Room 1
-  const CR = 13.5; // Conference Room 1's right wall (the strip beyond it was removed)
+  const O1R = O1L + EXT + 13 + IW; // Office 1 / lobby wall
+  const O1B = ROW + EXT + 11 + IW; // wall between Office 1 and Conference Room 1
+  const CR = O1R + IW + 3 + 0.5; // Conference Room 1's right wall: room for a 3' door past Office 1
   const CRB = ROW + EXT + 11 + IW + 15.5; // Conference Room 1's bottom (outside) wall
   const BOT = ROW + 17.5; // bottom outside wall of the lobby, kitchen and IT / Storage
   const C2T = ROW - 11; // Conference Room 2's top wall
@@ -68,10 +69,10 @@ export function oldOfficeObjects(): PlanObject[] {
     ...walls('interior', [10, Y3], [XR, Y3]),
     ...walls('interior', [10, ROW], [XR, ROW]),
     // Office 1: its door (to the lobby) is near the bottom of its right wall.
-    ...walls('interior', [10, ROW], [10, o1Door - 3]),
-    ...walls('interior', [10, o1Door], [10, O1B]),
-    ...walls('interior', [O1L, O1B], [10, O1B]), // Office 1 / Conference Room 1
-    // Conference Room 1's top-right corner is two doors: in its top wall (x 10 to CR) and in its
+    ...walls('interior', [O1R, ROW], [O1R, o1Door - 3]),
+    ...walls('interior', [O1R, o1Door], [O1R, O1B]),
+    ...walls('interior', [O1L, O1B], [O1R, O1B]), // Office 1 / Conference Room 1
+    // Conference Room 1's top-right corner is two doors: in its top wall (x O1R to CR) and in its
     // right wall (y O1B to BOT), both onto the lobby.
     // Kitchen, IT / Storage and Conference Room 2
     ...walls('interior', [25, ROW], [25, BOT]),
@@ -80,10 +81,12 @@ export function oldOfficeObjects(): PlanObject[] {
     ...walls('interior', [41, C2T], [41, ROW + 0.5]),
     ...walls('interior', [41, ROW + 3.5], [41, BOT]),
   ];
-  // The outside wall above Office 1 reads as the office's measured 11' width.
+  // The outside wall above Office 1 reads as the office's measured 13' width.
   const isAt = (q: Pt, x: number, y: number) => Math.abs(q.x - x * 12) < 0.01 && Math.abs(q.y - y * 12) < 0.01;
   for (const w of wallList)
-    if ((isAt(w.a, O1L, ROW) && isAt(w.b, 10, ROW)) || (isAt(w.a, 10, ROW) && isAt(w.b, O1L, ROW))) w.lengthLabel = "11'-0\"";
+    if ((isAt(w.a, O1L, ROW) && isAt(w.b, 10, ROW)) || (isAt(w.a, 10, ROW) && isAt(w.b, O1L, ROW))) w.lengthLabel = "13'-0\"";
+  // Office 1's right wall (both sides of its door) reads as its measured 11' depth.
+  for (const w of wallList) if (Math.abs(w.a.x - O1R * 12) < 0.01 && Math.abs(w.b.x - O1R * 12) < 0.01) w.lengthLabel = "11'-0\"";
   const room = (name: string, type: Room['roomType'], centerline: Pt[], fill: string, notes = ROUGH) =>
     makeRoom(name, type, insetByWalls(centerline, wallList), fill, { notes });
   const MEASURED_OFFICE = "Measured: 12' wide x 10' deep clear.";
@@ -93,8 +96,8 @@ export function oldOfficeObjects(): PlanObject[] {
     room('Office 4', 'office', rect(10, Y5, XR, Y4), '#eef0f6', MEASURED_OFFICE),
     room('Office 3', 'office', rect(10, Y4, XR, Y3), '#eef0f6', MEASURED_OFFICE),
     room('Office 2', 'office', rect(10, Y3, XR, ROW), '#eef0f6', MEASURED_OFFICE),
-    room('Office 1', 'office', rect(O1L, ROW, 10, O1B), '#eef0f6', "Measured 13' x 11': 11' wide x 13' deep clear."),
-    room('Lobby', 'entrance', [P(10, ROW), P(25, ROW), P(25, BOT), P(CR, BOT), P(CR, O1B), P(10, O1B)], '#f4f6f9'),
+    room('Office 1', 'office', rect(O1L, ROW, O1R, O1B), '#eef0f6', "Measured: 13' wide x 11' deep clear."),
+    room('Lobby', 'entrance', [P(O1R, ROW), P(25, ROW), P(25, BOT), P(CR, BOT), P(CR, O1B), P(O1R, O1B)], '#f4f6f9'),
     room('Conference Room 1', 'conference', rect(O1L, O1B, CR, CRB), '#e9eef8'),
     room('Printer area', 'open', rect(25, TOP, 41, TOP + 6), '#f4f6f9'),
     // The hallway by the offices is open to the cubicles, so it is part of the same area.
@@ -116,8 +119,8 @@ export function oldOfficeObjects(): PlanObject[] {
   };
   objs.push(
     door([41, ROW + 0.5], { x: 0, y: 1 }, [45, ROW + 2], 'IT / Storage door'), // from the kitchen side
-    door([10, o1Door], { x: 0, y: -1 }, [8, o1Door - 2], 'Office 1 door'), // from the lobby
-    door([10 + IW, O1B], { x: 1, y: 0 }, [11.5, O1B - 2], 'Conference Room 1 door (top)'), // swings out to the lobby
+    door([O1R, o1Door], { x: 0, y: -1 }, [O1R - 2, o1Door - 2], 'Office 1 door'), // from the lobby
+    door([O1R + IW, O1B], { x: 1, y: 0 }, [O1R + 1.5, O1B - 2], 'Conference Room 1 door (top)'), // swings out to the lobby
     door([CR, BOT - EXT], { x: 0, y: -1 }, [15, BOT - 2], 'Conference Room 1 door (side)'),
   );
 
