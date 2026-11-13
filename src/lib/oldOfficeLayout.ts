@@ -14,7 +14,7 @@ export const isOldOfficeLayout = (s: Scenario) => s.purpose === OLD_OFFICE_PURPO
 export const oldOfficeLayoutOf = (p: Project) => p.scenarios.find(isOldOfficeLayout);
 
 /** Bump when the drawing below changes, so saved Old office tabs get redrawn by Update floor plan. */
-export const OLD_OFFICE_VERSION = 3;
+export const OLD_OFFICE_VERSION = 4;
 
 const ROUGH = 'Approximate: drawn from the hand sketch, not measured yet.';
 const P = (x: number, y: number): Pt => ({ x: x * 12, y: y * 12 }); // feet -> plan inches
@@ -37,16 +37,16 @@ export function oldOfficeObjects(): PlanObject[] {
   // Walls are drawn on their centerlines; rooms are the clear floor between wall faces.
   const EXT = 4 / 12; // half an 8" outside wall
   const IW = 2.5 / 12; // half a 5" inside wall
-  // Offices 2, 3 and 4 (measured): 10'-0" wide x 12'-0" deep clear each, stacked above Office 2's
-  // bottom wall, with Office 5 (still a placeholder) above them; between the outside wall at x 10
-  // and the hallway wall at XR. The top wall sits above Office 5, which leaves the cubicle areas
-  // room for the printer area above cubicles placed near the old top wall.
-  const XR = 10 + EXT + 10 + IW;
+  // Offices 2, 3 and 4 (measured): the same size, 12'-0" wide x 10'-0" deep clear each, stacked
+  // above Office 2's bottom wall between the outside wall at x 10 and the hallway wall at XR.
+  // Office 5, above them, is the longest office: 12'-0" deep (until measured). The top wall sits
+  // above Office 5, with the printer area along it, above cubicles placed near the old top wall.
+  const XR = 10 + EXT + 12 + IW;
   const ROW = 31; // Office 2's bottom wall: Office 1, the lobby, kitchen and IT start here
-  const Y3 = ROW - IW - 12 - IW; // Office 3 / Office 2 wall
-  const Y4 = Y3 - IW - 12 - IW; // Office 4 / Office 3 wall
-  const Y5 = Y4 - IW - 12 - IW; // Office 5 / Office 4 wall
-  const TOP = Y5 - 12; // top outside wall (Office 5 is a placeholder 12' on centerlines)
+  const Y3 = ROW - IW - 10 - IW; // Office 3 / Office 2 wall
+  const Y4 = Y3 - IW - 10 - IW; // Office 4 / Office 3 wall
+  const Y5 = Y4 - IW - 10 - IW; // Office 5 / Office 4 wall
+  const TOP = Y5 - IW - 12 - EXT; // top outside wall
   // Office 1 (measured): 13'-0" wide x 11'-0" deep clear, left of the lobby wall at x 10.
   // Conference Room 1 sits right below it.
   const O1L = 10 - IW - 13 - EXT; // outside wall on the left of Office 1 and Conference Room 1
@@ -84,10 +84,10 @@ export function oldOfficeObjects(): PlanObject[] {
     if ((isAt(w.a, O1L, ROW) && isAt(w.b, 10, ROW)) || (isAt(w.a, 10, ROW) && isAt(w.b, O1L, ROW))) w.lengthLabel = "13'-0\"";
   const room = (name: string, type: Room['roomType'], centerline: Pt[], fill: string, notes = ROUGH) =>
     makeRoom(name, type, insetByWalls(centerline, wallList), fill, { notes });
-  const MEASURED_OFFICE = "Measured: 10' wide x 12' deep clear.";
+  const MEASURED_OFFICE = "Measured: 12' wide x 10' deep clear.";
 
   const objs: PlanObject[] = [
-    room('Office 5', 'office', rect(10, TOP, XR, Y5), '#eef0f6'),
+    room('Office 5', 'office', rect(10, TOP, XR, Y5), '#eef0f6', "The longest office: 12' deep (12' wide like Offices 2-4) until measured."),
     room('Office 4', 'office', rect(10, Y5, XR, Y4), '#eef0f6', MEASURED_OFFICE),
     room('Office 3', 'office', rect(10, Y4, XR, Y3), '#eef0f6', MEASURED_OFFICE),
     room('Office 2', 'office', rect(10, Y3, XR, ROW), '#eef0f6', MEASURED_OFFICE),
