@@ -200,7 +200,7 @@ function buildSuite(): SuiteGeometry {
   const r = Math.hypot(1, m);
   const B = S(o2In + (ext + ext * r) / m, 0); // far tip where the angled wall meets the window wall
   // Office 1: right triangle by the main entry. Measured 13'-0" clear along its door wall, then the
-  // bottom wall was pushed 2'-0" further toward the window wall (Nov 2026 decision); labelled 14' x 12'.
+  // bottom wall was pushed 2'-0" further toward the window wall (Nov 2026 decision); labelled 14' x 13'-6".
   // The door wall runs straight up to E1; the bottom wall runs level to the angled wall.
   const o1Top = ext + (o2In - (E1.x + IW)) * m; // inside top corner, on the angled wall
   const o1a = S(E1.x, o1Top - 13 - 2 - IW); // the right-angle corner
@@ -268,9 +268,9 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(S(div32, o3T), S(div32, 0), [], 'interior', CONTRACTOR),
     ...wallFt(S(div32, o3T), o2T, [[0.5, 36]], 'interior', CONTRACTOR), // Office 2 top wall + door, out to the angled wall
     // Office 1 (contractor) — right triangle by the main entry
-    // Labelled with the marked 13' x 12' (the drawing is not to scale here).
+    // Labelled 14' x 13'-6" as measured (the drawing is not to scale here).
     ...wallFt(o1a, E1, [[0.6, 36]], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "14'-0\"" })),
-    ...wallFt(o1a, o1e, [], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "12'-0\"" })),
+    ...wallFt(o1a, o1e, [], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "13'-6\"" })), // labelled as measured; the drawing is not reshaped
   ];
 
   const R = (name: string, type: Room['roomType'], centerFt: Pt[], fill: string, extra: Partial<Room> = {}) =>

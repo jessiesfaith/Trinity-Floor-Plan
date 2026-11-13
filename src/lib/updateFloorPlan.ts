@@ -5,7 +5,7 @@
 import type { PlanObject, Project, Scenario } from '@/types/plan';
 import { createSampleProject } from './sampleProject';
 import { isSizesLayout, sampleCubicles } from './sizesLayout';
-import { isOldOfficeLayout } from './oldOfficeLayout';
+import { isOldOfficeLayout, oldOfficeIsOutdated, refreshOldOffice } from './oldOfficeLayout';
 
 /** Layouts with no Trinity suite in them (sample cubicles, the old office): never updated. */
 const notSuite = (s: Scenario) => isSizesLayout(s) || isOldOfficeLayout(s);
@@ -66,7 +66,8 @@ export function updateFloorPlan(project: Project): FloorPlanUpdate {
   let kept = 0;
 
   const scenarios = project.scenarios.map((s) => {
-    if (notSuite(s)) return s; // sample cubicles / the old office: no Trinity suite
+    if (isOldOfficeLayout(s)) return refreshOldOffice(s); // its own drawing, redrawn when it changes
+    if (notSuite(s)) return s; // sample cubicles: no Trinity suite
     const base = structuredClone(starter) as PlanObject[];
     const newRoomId = new Map(base.filter((o) => o.kind === 'room').map((r) => [r.name, r.id]));
     const oldRoomName = new Map(s.objects.filter((o) => o.kind === 'room').map((r) => [r.id, r.name]));
@@ -101,6 +102,7 @@ function geometryKey(objs: PlanObject[]): string {
  * plan has since dropped, so "Update floor plan" would help.
  */
 export function floorPlanIsOutdated(project: Project): boolean {
+  if (project.scenarios.some(oldOfficeIsOutdated)) return true;
   const isTrinity = project.scenarios.some((s) => s.objects.some((o) => o.kind === 'room' && o.fixed === 'Contractor-fixed'));
   if (!isTrinity) return false;
   starterGeometryKey ??= geometryKey(createSampleProject().scenarios[0].objects);

@@ -228,6 +228,8 @@ export interface Scenario {
   objects: PlanObject[];
   /** 'cubicle-walls': the Cubicle walls tab's layout (cubicles as loose cube walls). */
   purpose?: 'cubicle-walls' | 'cubicle-sizes' | 'old-office';
+  /** Version of a generated drawing (the Old office tab), so Update floor plan can redraw older copies. */
+  layoutVersion?: number;
   /** For the walls layout: the floor plan layout it was made from. */
   sourceId?: string;
   /** For the walls layout: the suggested Office 1 furniture has been placed once. */

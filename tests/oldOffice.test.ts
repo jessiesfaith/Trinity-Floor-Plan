@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createSampleProject } from '@/lib/sampleProject';
-import { isOldOfficeLayout, oldOfficeLayoutOf, openOldOffice } from '@/lib/oldOfficeLayout';
+import { isOldOfficeLayout, oldOfficeLayoutOf, OLD_OFFICE_VERSION, openOldOffice } from '@/lib/oldOfficeLayout';
+import { BUILT_IN_TEMPLATES } from '@/lib/library';
+import { furnitureFromTemplate } from '@/lib/objects';
+import { bbox } from '@/lib/geometry';
 import { floorPlanIsOutdated, updateFloorPlan } from '@/lib/updateFloorPlan';
 import { openCubicleWalls, openFloorPlan } from '@/lib/wallsLayout';
 import { parseProject, serializeProject } from '@/lib/persistence';
@@ -40,6 +43,34 @@ describe('Old office tab', () => {
     const s = oldOfficeLayoutOf(p)!;
     const errors = validate(s.objects, p.settings, {}).issues.filter((i) => i.severity === 'error');
     expect(errors.map((i) => i.message)).toEqual([]);
+  });
+
+  it('Office 1 is 11 x 13 with its door to the lobby; Conference Room 1 has two doors at its top-right corner', () => {
+    const s = oldOfficeLayoutOf(openOldOffice(createSampleProject()))!;
+    const room = (n: string) => s.objects.find((o): o is Room => o.kind === 'room' && o.name === n)!;
+    const b = bbox(room('Office 1').points);
+    expect([b.width / 12, b.height / 12]).toEqual([11, 13]);
+    const doors = s.objects.filter((o) => o.kind === 'door').map((o) => o.name);
+    expect(doors).toContain('Office 1 door');
+    expect(doors.filter((n) => n.startsWith('Conference Room 1 door'))).toHaveLength(2);
+    expect(doors).not.toContain('Office 1 to Conference Room 1');
+    // Office 1 sits right on top of Conference Room 1, with just their 5" wall between.
+    expect(bbox(room('Conference Room 1').points).minY - b.maxY).toBeCloseTo(5, 6);
+  });
+
+  it('Update floor plan redraws an older Old office tab, keeping cubicles added to it', () => {
+    const p = openOldOffice(createSampleProject());
+    const old = oldOfficeLayoutOf(p)!;
+    const cube = furnitureFromTemplate(BUILT_IN_TEMPLATES.find((t) => t.type === 'cubicle')!, 300, 150, 'Cubicle 01');
+    const stale = { ...old, layoutVersion: undefined, objects: [...old.objects.filter((o) => o.name !== 'Office 1 door'), cube] };
+    const saved = { ...p, scenarios: p.scenarios.map((s) => (s.id === old.id ? stale : s)) };
+    expect(floorPlanIsOutdated(saved)).toBe(true);
+    const after = oldOfficeLayoutOf(updateFloorPlan(saved).project)!;
+    expect(after.layoutVersion).toBe(OLD_OFFICE_VERSION);
+    expect(after.objects.filter((o) => o.name === 'Cubicle 01')).toHaveLength(1);
+    expect(after.objects.some((o) => o.name === 'Office 1 door')).toBe(true);
+    expect(after.objects.filter((o) => o.name === 'Conference table')).toHaveLength(2);
+    expect(after.objects.length).toBe(oldOfficeLayoutOf(p)!.objects.length + 1);
   });
 
   it('survives saving and loading', () => {
