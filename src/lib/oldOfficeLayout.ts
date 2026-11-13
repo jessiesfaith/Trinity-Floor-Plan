@@ -14,7 +14,7 @@ export const isOldOfficeLayout = (s: Scenario) => s.purpose === OLD_OFFICE_PURPO
 export const oldOfficeLayoutOf = (p: Project) => p.scenarios.find(isOldOfficeLayout);
 
 /** Bump when the drawing below changes, so saved Old office tabs get redrawn by Update floor plan. */
-export const OLD_OFFICE_VERSION = 5;
+export const OLD_OFFICE_VERSION = 6;
 
 const ROUGH = 'Approximate: drawn from the hand sketch, not measured yet.';
 const P = (x: number, y: number): Pt => ({ x: x * 12, y: y * 12 }); // feet -> plan inches
@@ -56,10 +56,11 @@ export function oldOfficeObjects(): PlanObject[] {
   const CRB = ROW + EXT + 11 + IW + 15.5; // Conference Room 1's bottom (outside) wall
   const BOT = ROW + 17.5; // bottom outside wall of the lobby, kitchen and IT / Storage
   const C2T = ROW - 11; // Conference Room 2's top wall
+  const RX = 49.5; // right outside wall, just past the cubicles in Cubicle area 2 (was 53)
   const o1Door = O1B - IW - 0.33; // Office 1 door hinge, near the bottom of its right wall
   const wallList = [
     // Outside walls
-    ...walls('exterior', [10, TOP], [53, TOP], [53, BOT], [CR, BOT], [CR, CRB], [O1L, CRB], [O1L, ROW], [10, ROW], [10, TOP]),
+    ...walls('exterior', [10, TOP], [RX, TOP], [RX, BOT], [CR, BOT], [CR, CRB], [O1L, CRB], [O1L, ROW], [10, ROW], [10, TOP]),
     // Offices along the hallway
     ...walls('interior', [XR, TOP], [XR, ROW]),
     ...walls('interior', [10, Y5], [XR, Y5]),
@@ -74,8 +75,8 @@ export function oldOfficeObjects(): PlanObject[] {
     // right wall (y O1B to BOT), both onto the lobby.
     // Kitchen, IT / Storage and Conference Room 2
     ...walls('interior', [25, ROW], [25, BOT]),
-    ...walls('interior', [25, ROW], [53, ROW]),
-    ...walls('interior', [41, C2T], [53, C2T]),
+    ...walls('interior', [25, ROW], [RX, ROW]),
+    ...walls('interior', [41, C2T], [RX, C2T]),
     ...walls('interior', [41, C2T], [41, ROW + 0.5]),
     ...walls('interior', [41, ROW + 3.5], [41, BOT]),
   ];
@@ -98,10 +99,10 @@ export function oldOfficeObjects(): PlanObject[] {
     room('Printer area', 'open', rect(25, TOP, 41, TOP + 6), '#f4f6f9'),
     // The hallway by the offices is open to the cubicles, so it is part of the same area.
     room('Cubicle area', 'cubicle-area', [P(XR, TOP), P(25, TOP), P(25, TOP + 6), P(41, TOP + 6), P(41, ROW), P(XR, ROW)], '#e3f4f3'),
-    room('Cubicle area 2', 'cubicle-area', rect(41, TOP, 53, C2T), '#e3f4f3'),
-    room('Conference Room 2', 'conference', rect(41, C2T, 53, ROW), '#e9eef8'),
+    room('Cubicle area 2', 'cubicle-area', rect(41, TOP, RX, C2T), '#e3f4f3'),
+    room('Conference Room 2', 'conference', rect(41, C2T, RX, ROW), '#e9eef8'),
     room('Kitchen', 'kitchen', rect(25, ROW, 41, BOT), '#fbf3e4'),
-    room('IT / Storage', 'it', rect(41, ROW, 53, BOT), '#eef2f7'),
+    room('IT / Storage', 'it', rect(41, ROW, RX, BOT), '#eef2f7'),
     ...wallList,
   ];
 
@@ -125,7 +126,7 @@ export function oldOfficeObjects(): PlanObject[] {
   // A few fixtures from the sketch.
   objs.push(
     { ...furnitureFromTemplate(tpl('conf-8'), ((O1L + CR) / 2) * 12, ((O1B + CRB) / 2) * 12, 'Conference table', 90), notes: ROUGH },
-    { ...furnitureFromTemplate(tpl('conf-8'), 47 * 12, (ROW - 5.5) * 12, 'Conference table', 90), notes: ROUGH },
+    { ...furnitureFromTemplate(tpl('conf-8'), ((41 + RX) / 2) * 12, (ROW - 5.5) * 12, 'Conference table', 90), notes: ROUGH },
     { ...furnitureFromTemplate(tpl('printer'), 33 * 12, (TOP + 3) * 12, 'Printer / copier') },
     { ...furnitureFromTemplate(tpl('storage-cab'), 32 * 12, BOT * 12 - 17, 'Kitchen counter'), width: 144, depth: 24, notes: ROUGH },
   );
