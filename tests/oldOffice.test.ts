@@ -45,11 +45,11 @@ describe('Old office tab', () => {
     expect(errors.map((i) => i.message)).toEqual([]);
   });
 
-  it("Office 1 is 13 x 11, Offices 2-4 are 12 x 10 and Office 5 is the longest; Office 1's door to the lobby; Conference Room 1 has two doors at its top-right corner", () => {
+  it("Office 1 is 11 wide x 13 deep, Offices 2-4 are 12 x 10 and Office 5 is the longest; Office 1's door to the lobby; Conference Room 1 has two doors at its top-right corner", () => {
     const s = oldOfficeLayoutOf(openOldOffice(createSampleProject()))!;
     const room = (n: string) => s.objects.find((o): o is Room => o.kind === 'room' && o.name === n)!;
     const b = bbox(room('Office 1').points);
-    expect([b.width / 12, b.height / 12].map((v) => Math.round(v * 1000) / 1000)).toEqual([13, 11]);
+    expect([b.width / 12, b.height / 12].map((v) => Math.round(v * 1000) / 1000)).toEqual([11, 13]);
     for (const n of ['Office 2', 'Office 3', 'Office 4']) {
       const o = bbox(room(n).points);
       expect([o.width / 12, o.height / 12].map((v) => Math.round(v * 1000) / 1000), n).toEqual([12, 10]);
@@ -58,7 +58,7 @@ describe('Old office tab', () => {
     const doors = s.objects.filter((o) => o.kind === 'door').map((o) => o.name);
     expect(doors).toContain('Office 1 door');
     // The outside wall above Office 1 is labelled with its measured width.
-    expect(s.objects.some((o) => o.kind === 'wall' && o.lengthLabel === "13'-0\"")).toBe(true);
+    expect(s.objects.some((o) => o.kind === 'wall' && o.lengthLabel === "11'-0\"")).toBe(true);
     expect(doors.filter((n) => n.startsWith('Conference Room 1 door'))).toHaveLength(2);
     expect(doors).not.toContain('Office 1 to Conference Room 1');
     // Office 1 sits right on top of Conference Room 1, with just their 5" wall between.
