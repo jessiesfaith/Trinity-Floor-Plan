@@ -14,7 +14,7 @@ export const isOldOfficeLayout = (s: Scenario) => s.purpose === OLD_OFFICE_PURPO
 export const oldOfficeLayoutOf = (p: Project) => p.scenarios.find(isOldOfficeLayout);
 
 /** Bump when the drawing below changes, so saved Old office tabs get redrawn by Update floor plan. */
-export const OLD_OFFICE_VERSION = 2;
+export const OLD_OFFICE_VERSION = 3;
 
 const ROUGH = 'Approximate: drawn from the hand sketch, not measured yet.';
 const P = (x: number, y: number): Pt => ({ x: x * 12, y: y * 12 }); // feet -> plan inches
@@ -28,59 +28,79 @@ function walls(type: 'exterior' | 'interior', ...pts: [number, number][]) {
   return out;
 }
 
-/** The old office, in feet: x to the right, y down; (0, 0) is the outside corner by Office 5. */
+/**
+ * The old office, in feet: x to the right, y down. The row with Office 1, the lobby, kitchen and
+ * IT / Storage starts at y 31, where it was first drawn, so cubicles placed in earlier versions stay
+ * put; the offices column and the cubicle areas grow upward from there.
+ */
 export function oldOfficeObjects(): PlanObject[] {
   // Walls are drawn on their centerlines; rooms are the clear floor between wall faces.
   const EXT = 4 / 12; // half an 8" outside wall
   const IW = 2.5 / 12; // half a 5" inside wall
-  // Office 1 (measured): 11'-0" x 13'-0" clear, below the outside wall at y 31 and left of the
-  // lobby wall at x 10. Conference Room 1 sits right below it.
-  const O1L = 10 - IW - 11 - EXT; // outside wall on the left of Office 1 and Conference Room 1
-  const O1B = 31 + EXT + 13 + IW; // wall between Office 1 and Conference Room 1
+  // Offices 2, 3 and 4 (measured): 10'-0" wide x 12'-0" deep clear each, stacked above Office 2's
+  // bottom wall, with Office 5 (still a placeholder) above them; between the outside wall at x 10
+  // and the hallway wall at XR. The top wall sits above Office 5, which leaves the cubicle areas
+  // room for the printer area above cubicles placed near the old top wall.
+  const XR = 10 + EXT + 10 + IW;
+  const ROW = 31; // Office 2's bottom wall: Office 1, the lobby, kitchen and IT start here
+  const Y3 = ROW - IW - 12 - IW; // Office 3 / Office 2 wall
+  const Y4 = Y3 - IW - 12 - IW; // Office 4 / Office 3 wall
+  const Y5 = Y4 - IW - 12 - IW; // Office 5 / Office 4 wall
+  const TOP = Y5 - 12; // top outside wall (Office 5 is a placeholder 12' on centerlines)
+  // Office 1 (measured): 13'-0" wide x 11'-0" deep clear, left of the lobby wall at x 10.
+  // Conference Room 1 sits right below it.
+  const O1L = 10 - IW - 13 - EXT; // outside wall on the left of Office 1 and Conference Room 1
+  const O1B = ROW + EXT + 11 + IW; // wall between Office 1 and Conference Room 1
   const CR = 13.5; // Conference Room 1's right wall (the strip beyond it was removed)
-  const BOT = 48.5; // bottom outside wall of the lobby, kitchen and IT / Storage
+  const CRB = O1B + 15.5; // Conference Room 1's bottom (outside) wall
+  const BOT = ROW + 17.5; // bottom outside wall of the lobby, kitchen and IT / Storage
+  const C2T = ROW - 11; // Conference Room 2's top wall
+  const o1Door = O1B - IW - 0.33; // Office 1 door hinge, near the bottom of its right wall
   const wallList = [
     // Outside walls
-    ...walls('exterior', [10, 0], [53, 0], [53, BOT], [CR, BOT], [CR, 60], [O1L, 60], [O1L, 31], [10, 31], [10, 0]),
+    ...walls('exterior', [10, TOP], [53, TOP], [53, BOT], [CR, BOT], [CR, CRB], [O1L, CRB], [O1L, ROW], [10, ROW], [10, TOP]),
     // Offices along the hallway
-    ...walls('interior', [20.5, 0], [20.5, 31]),
-    ...walls('interior', [10, 12], [20.5, 12]),
-    ...walls('interior', [10, 18], [20.5, 18]),
-    ...walls('interior', [10, 24], [20.5, 24]),
-    ...walls('interior', [10, 31], [20.5, 31]),
+    ...walls('interior', [XR, TOP], [XR, ROW]),
+    ...walls('interior', [10, Y5], [XR, Y5]),
+    ...walls('interior', [10, Y4], [XR, Y4]),
+    ...walls('interior', [10, Y3], [XR, Y3]),
+    ...walls('interior', [10, ROW], [XR, ROW]),
     // Office 1: its door (to the lobby) is near the bottom of its right wall.
-    ...walls('interior', [10, 31], [10, 41]),
-    ...walls('interior', [10, 44], [10, O1B]),
+    ...walls('interior', [10, ROW], [10, o1Door - 3]),
+    ...walls('interior', [10, o1Door], [10, O1B]),
     ...walls('interior', [O1L, O1B], [10, O1B]), // Office 1 / Conference Room 1
     // Conference Room 1's top-right corner is two doors: in its top wall (x 10 to CR) and in its
     // right wall (y O1B to BOT), both onto the lobby.
     // Kitchen, IT / Storage and Conference Room 2
-    ...walls('interior', [25, 31], [25, BOT]),
-    ...walls('interior', [25, 31], [53, 31]),
-    ...walls('interior', [41, 20], [53, 20]),
-    ...walls('interior', [41, 20], [41, 31.5]),
-    ...walls('interior', [41, 34.5], [41, BOT]),
+    ...walls('interior', [25, ROW], [25, BOT]),
+    ...walls('interior', [25, ROW], [53, ROW]),
+    ...walls('interior', [41, C2T], [53, C2T]),
+    ...walls('interior', [41, C2T], [41, ROW + 0.5]),
+    ...walls('interior', [41, ROW + 3.5], [41, BOT]),
   ];
-  // The outside wall above Office 1 reads as the office's measured 11' width.
-  for (const w of wallList) if (w.a.x === 10 * 12 && w.a.y === 31 * 12 && w.b.x === O1L * 12) w.lengthLabel = "11'-0\"";
+  // The outside wall above Office 1 reads as the office's measured 13' width.
+  const isAt = (q: Pt, x: number, y: number) => Math.abs(q.x - x * 12) < 0.01 && Math.abs(q.y - y * 12) < 0.01;
+  for (const w of wallList)
+    if ((isAt(w.a, O1L, ROW) && isAt(w.b, 10, ROW)) || (isAt(w.a, 10, ROW) && isAt(w.b, O1L, ROW))) w.lengthLabel = "13'-0\"";
   const room = (name: string, type: Room['roomType'], centerline: Pt[], fill: string, notes = ROUGH) =>
     makeRoom(name, type, insetByWalls(centerline, wallList), fill, { notes });
+  const MEASURED_OFFICE = "Measured: 10' wide x 12' deep clear.";
 
   const objs: PlanObject[] = [
-    room('Office 5', 'office', rect(10, 0, 20.5, 12), '#eef0f6'),
-    room('Office 4', 'office', rect(10, 12, 20.5, 18), '#eef0f6'),
-    room('Office 3', 'office', rect(10, 18, 20.5, 24), '#eef0f6'),
-    room('Office 2', 'office', rect(10, 24, 20.5, 31), '#eef0f6'),
-    room('Office 1', 'office', rect(O1L, 31, 10, O1B), '#eef0f6', "Measured: 11' x 13' clear."),
-    room('Lobby', 'entrance', [P(10, 31), P(25, 31), P(25, BOT), P(CR, BOT), P(CR, O1B), P(10, O1B)], '#f4f6f9'),
-    room('Conference Room 1', 'conference', rect(O1L, O1B, CR, 60), '#e9eef8'),
-    room('Printer area', 'open', rect(25, 0, 41, 6), '#f4f6f9'),
+    room('Office 5', 'office', rect(10, TOP, XR, Y5), '#eef0f6'),
+    room('Office 4', 'office', rect(10, Y5, XR, Y4), '#eef0f6', MEASURED_OFFICE),
+    room('Office 3', 'office', rect(10, Y4, XR, Y3), '#eef0f6', MEASURED_OFFICE),
+    room('Office 2', 'office', rect(10, Y3, XR, ROW), '#eef0f6', MEASURED_OFFICE),
+    room('Office 1', 'office', rect(O1L, ROW, 10, O1B), '#eef0f6', "Measured: 13' wide x 11' deep clear."),
+    room('Lobby', 'entrance', [P(10, ROW), P(25, ROW), P(25, BOT), P(CR, BOT), P(CR, O1B), P(10, O1B)], '#f4f6f9'),
+    room('Conference Room 1', 'conference', rect(O1L, O1B, CR, CRB), '#e9eef8'),
+    room('Printer area', 'open', rect(25, TOP, 41, TOP + 6), '#f4f6f9'),
     // The hallway by the offices is open to the cubicles, so it is part of the same area.
-    room('Cubicle area', 'cubicle-area', [P(20.5, 0), P(25, 0), P(25, 6), P(41, 6), P(41, 31), P(20.5, 31)], '#e3f4f3'),
-    room('Cubicle area 2', 'cubicle-area', rect(41, 0, 53, 20), '#e3f4f3'),
-    room('Conference Room 2', 'conference', rect(41, 20, 53, 31), '#e9eef8'),
-    room('Kitchen', 'kitchen', rect(25, 31, 41, BOT), '#fbf3e4'),
-    room('IT / Storage', 'it', rect(41, 31, 53, BOT), '#eef2f7'),
+    room('Cubicle area', 'cubicle-area', [P(XR, TOP), P(25, TOP), P(25, TOP + 6), P(41, TOP + 6), P(41, ROW), P(XR, ROW)], '#e3f4f3'),
+    room('Cubicle area 2', 'cubicle-area', rect(41, TOP, 53, C2T), '#e3f4f3'),
+    room('Conference Room 2', 'conference', rect(41, C2T, 53, ROW), '#e9eef8'),
+    room('Kitchen', 'kitchen', rect(25, ROW, 41, BOT), '#fbf3e4'),
+    room('IT / Storage', 'it', rect(41, ROW, 53, BOT), '#eef2f7'),
     ...wallList,
   ];
 
@@ -93,23 +113,23 @@ export function oldOfficeObjects(): PlanObject[] {
     return makeDoor(hinge.x, hinge.y, (Math.atan2(dir.y, dir.x) * 180) / Math.PI, 36, swing, name);
   };
   objs.push(
-    door([41, 31.5], { x: 0, y: 1 }, [45, 33], 'IT / Storage door'), // from the kitchen side
-    door([10, 44], { x: 0, y: -1 }, [8, 42], 'Office 1 door'), // from the lobby
-    door([10 + IW, O1B], { x: 1, y: 0 }, [11.5, 42], 'Conference Room 1 door (top)'), // swings out to the lobby
-    door([CR, BOT - EXT], { x: 0, y: -1 }, [15, 46.5], 'Conference Room 1 door (side)'),
+    door([41, ROW + 0.5], { x: 0, y: 1 }, [45, ROW + 2], 'IT / Storage door'), // from the kitchen side
+    door([10, o1Door], { x: 0, y: -1 }, [8, o1Door - 2], 'Office 1 door'), // from the lobby
+    door([10 + IW, O1B], { x: 1, y: 0 }, [11.5, O1B - 2], 'Conference Room 1 door (top)'), // swings out to the lobby
+    door([CR, BOT - EXT], { x: 0, y: -1 }, [15, BOT - 2], 'Conference Room 1 door (side)'),
   );
 
   // The cubicle areas are left empty: cubicles are added by hand.
 
   // A few fixtures from the sketch.
   objs.push(
-    { ...furnitureFromTemplate(tpl('conf-8'), ((O1L + CR) / 2) * 12, ((O1B + 60) / 2) * 12, 'Conference table', 90), notes: ROUGH },
-    { ...furnitureFromTemplate(tpl('conf-8'), 47 * 12, 25.5 * 12, 'Conference table', 90), notes: ROUGH },
-    { ...furnitureFromTemplate(tpl('printer'), 33 * 12, 3 * 12, 'Printer / copier') },
+    { ...furnitureFromTemplate(tpl('conf-8'), ((O1L + CR) / 2) * 12, ((O1B + CRB) / 2) * 12, 'Conference table', 90), notes: ROUGH },
+    { ...furnitureFromTemplate(tpl('conf-8'), 47 * 12, (ROW - 5.5) * 12, 'Conference table', 90), notes: ROUGH },
+    { ...furnitureFromTemplate(tpl('printer'), 33 * 12, (TOP + 3) * 12, 'Printer / copier') },
     { ...furnitureFromTemplate(tpl('storage-cab'), 32 * 12, BOT * 12 - 17, 'Kitchen counter'), width: 144, depth: 24, notes: ROUGH },
   );
 
-  const note = makeLabel(O1L * 12, 63 * 12, 'Old office: rough layout from the hand sketch. Sizes are placeholders until measured.');
+  const note = makeLabel(O1L * 12, (CRB + 3) * 12, 'Old office: rough layout from the hand sketch. Sizes are placeholders until measured.');
   objs.push({ ...note, style: { ...note.style, fontSize: 14, color: '#b45309' } });
   return objs;
 }
