@@ -65,24 +65,20 @@ describe('Old office tab', () => {
     expect(doors.filter((n) => n.startsWith('Entry door'))).toHaveLength(2);
   });
 
-  it('has a width and depth dimension on every room, reading the plan sizes', () => {
+  it("labels the walls with the architect's numbers, with no dimension lines", () => {
     const s = oldOfficeLayoutOf(openOldOffice(createSampleProject()))!;
-    const len = (n: string) => {
-      const d = s.objects.find((o) => o.kind === 'dimension' && o.name === n) as { a: { x: number; y: number }; b: { x: number; y: number } } | undefined;
-      expect(d, n).toBeTruthy();
-      return Math.round(Math.hypot(d!.b.x - d!.a.x, d!.b.y - d!.a.y) * 10) / 10;
-    };
-    for (const r of s.objects.filter((o): o is Room => o.kind === 'room' && o.name !== 'Cubicle area')) {
-      len(`${r.name} width`);
-      len(`${r.name} depth`);
-    }
-    expect(len('Office 1 width')).toBe(100); // 8'4"
-    expect(len('Office 5 width')).toBe(234); // 19'6"
-    expect(len('Office 3 depth')).toBe(138); // 11'6"
-    expect(len('Office 4 depth')).toBe(153); // 12'9"
-    expect(len('Demo Room width')).toBe(144);
-    expect(len('Conference width')).toBe(360); // 30', drawn to the plan's scale
-    expect(len('Offices to Demo Room')).toBe(231); // 19'3"
+    expect(s.objects.some((o) => o.kind === 'dimension')).toBe(false);
+    const labels = s.objects.flatMap((o) => (o.kind === 'wall' && o.lengthLabel ? [o.lengthLabel] : []));
+    for (const l of ["39'-0\"", "9'-0\"", "12'-9\"", "8'-4\"", "9'-7\"", "19'-6\"", "11'-6\"", "47'-0\"", "12'-0\"", "10'-0\""]) expect(labels).toContain(l);
+  });
+
+  it('drops the dimension lines of an earlier version when redrawn', () => {
+    const p = openOldOffice(createSampleProject());
+    const old = oldOfficeLayoutOf(p)!;
+    const dim = { id: 'm1', kind: 'dimension' as const, name: 'Office 1 width', a: { x: 0, y: 0 }, b: { x: 100, y: 0 }, offset: 0, color: '#d62828', locked: false, notes: '' };
+    const stale = { ...old, layoutVersion: 9, objects: [...old.objects, dim] };
+    const after = oldOfficeLayoutOf(updateFloorPlan({ ...p, scenarios: p.scenarios.map((s) => (s.id === old.id ? stale : s)) }).project)!;
+    expect(after.objects.some((o) => o.kind === 'dimension')).toBe(false);
   });
 
   it('Update floor plan redraws an older Old office tab, keeping cubicles added to it', () => {

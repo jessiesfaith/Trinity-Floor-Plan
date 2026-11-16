@@ -5,8 +5,8 @@
 
 import type { PlanObject, Project, Pt, Room, Scenario } from '@/types/plan';
 import { BUILT_IN_TEMPLATES } from './library';
-import { furnitureFromTemplate, makeDimension, makeDoor, makeLabel, makeRoom, makeWall, uid } from './objects';
-import { bbox, perp } from './geometry';
+import { furnitureFromTemplate, makeDoor, makeLabel, makeRoom, makeWall, uid } from './objects';
+import { perp } from './geometry';
 import { insetByWalls } from './sampleProject';
 
 export const OLD_OFFICE_PURPOSE = 'old-office' as const;
@@ -14,7 +14,7 @@ export const isOldOfficeLayout = (s: Scenario) => s.purpose === OLD_OFFICE_PURPO
 export const oldOfficeLayoutOf = (p: Project) => p.scenarios.find(isOldOfficeLayout);
 
 /** Bump when the drawing below changes, so saved Old office tabs get redrawn by Update floor plan. */
-export const OLD_OFFICE_VERSION = 10;
+export const OLD_OFFICE_VERSION = 11;
 
 const PLAN = "From the architect's floor plan (Suite 201).";
 // The drawing is shifted so its open cubicle area lands where the earlier sketch's cubicle area
@@ -69,8 +69,8 @@ export function oldOfficeObjects(): PlanObject[] {
 
   const wallList = [
     // Outside walls (gaps for the back door and the Entry's double doors)
-    ...walls('exterior', [CL, T], [0, T], [0, 0], [RX, 0], [RX, BOT - 4]),
-    ...walls('exterior', [RX, BOT - 1], [RX, BOT], [BL + CUT, BOT], [BL, BOT - CUT], [BL, ES], [EL, ES], [EL, 11]),
+    ...walls('exterior', [CL, T], [O4L, T], [0, T], [0, 0], [X1, 0], [X2, 0], [X3, 0], [RX, 0], [RX, YB], [RX, BOT - 4]),
+    ...walls('exterior', [RX, BOT - 1], [RX, BOT], [DR, BOT], [0, BOT], [BL + CUT, BOT], [BL, BOT - CUT], [BL, ES], [EL, ES], [EL, 11]),
     ...walls('exterior', [EL, 5], [EL, 0]),
     ...walls('exterior', [CL, 0], [CL, T]), // Conference room's left wall
     ...walls('interior', [EL, 0], [CL, 0]), // Conference / common lobby
@@ -101,6 +101,38 @@ export function oldOfficeObjects(): PlanObject[] {
     ...walls('interior', [3.75, DT], [DR, DT]),
     ...walls('interior', [DR, DT], [DR, BOT]),
   ];
+  // Wall lengths as the architect's plan writes them. Each labelled wall shows the plan's number
+  // in place of its drawn length; walls the plan gives no number for show their drawn length.
+  const on = (w: (typeof wallList)[number], a: [number, number], b: [number, number]) => {
+    const A = P(...a);
+    const B = P(...b);
+    const L = Math.hypot(B.x - A.x, B.y - A.y);
+    const along = (q: Pt) => ((q.x - A.x) * (B.x - A.x) + (q.y - A.y) * (B.y - A.y)) / L;
+    const off = (q: Pt) => Math.abs((q.x - A.x) * (B.y - A.y) - (q.y - A.y) * (B.x - A.x)) / L;
+    return [w.a, w.b].every((q) => off(q) < 0.5 && along(q) > -0.5 && along(q) < L + 0.5);
+  };
+  const PLAN_LENGTHS: [[number, number], [number, number], string][] = [
+    [[CL, T], [O4L, T], "39'-0\""], // Conference (as written on the plan)
+    [[CL, 0], [CL, T], "12'-9\""],
+    [[O4L, T], [O4L, 0], "12'-9\""],
+    [[O4L, T], [0, T], "9'-0\""], // Office 4
+    [[0, T], [0, 0], "12'-9\""],
+    [[0, 0], [X1, 0], "8'-4\""], // Office 1
+    [[X1, 0], [X2, 0], "8'-4\""], // Office 2
+    [[X2, 0], [X3, 0], "9'-7\""], // Office 3
+    [[X3, 0], [RX, 0], "19'-6\""], // Office 5
+    [[0, 0], [0, YB], "11'-6\""],
+    [[X1, 0], [X1, YB], "11'-6\""],
+    [[X2, 0], [X2, YB], "11'-6\""],
+    [[X3, 0], [X3, YB], "11'-6\""],
+    [[RX, 0], [RX, YB], "11'-6\""],
+    [[0, YB], [RX, YB], "47'-0\""], // the offices' front wall: the plan's overall 47'
+    [[0, DT], [DR, DT], "12'-0\""], // Demo room
+    [[DR, DT], [DR, BOT], "10'-0\""],
+    [[0, BOT], [DR, BOT], "12'-0\""],
+  ];
+  for (const w of wallList) for (const [a, b, text] of PLAN_LENGTHS) if (on(w, a, b)) w.lengthLabel = text;
+
   const room = (name: string, type: Room['roomType'], centerline: Pt[], fill: string, notes = PLAN) =>
     makeRoom(name, type, insetByWalls(centerline, wallList), fill, { notes });
 
@@ -159,29 +191,6 @@ export function oldOfficeObjects(): PlanObject[] {
     { ...furnitureFromTemplate(tpl('storage-cab'), counter.x, counter.y, 'Break room counter', 90), width: 96, depth: 24 },
   );
 
-  // Dimensions: every room's clear width (near its top) and depth (near its left side, or the
-  // right where the left is cut off), plus the open area and the building's outside sizes. They
-  // measure the drawing itself, so they read the plan's sizes where the plan gives them.
-  const IN = 1.5 * 12; // how far inside a room its dimension lines sit
-  const dim = (a: Pt, b: Pt, name: string) => ({ ...makeDimension(a, b, 0), name });
-  for (const r of objs.filter((o): o is Room => o.kind === 'room')) {
-    if (r.name === 'Cubicle area') continue;
-    const b = bbox(r.points);
-    const x = r.name === 'Server Room' ? b.maxX - IN : b.minX + IN;
-    objs.push(
-      dim({ x: b.minX, y: b.minY + IN }, { x: b.maxX, y: b.minY + IN }, `${r.name} width`),
-      dim({ x, y: b.minY }, { x, y: b.maxY }, `${r.name} depth`),
-    );
-  }
-  const open = P(0, YB); // the open area: offices' bottom wall down to the Demo room's glass front
-  objs.push(
-    dim({ x: open.x + 6 * 12, y: open.y + IW * 12 }, { x: open.x + 6 * 12, y: P(0, DT).y - IW * 12 }, 'Offices to Demo Room'),
-    dim({ x: P(RX, 0).x - EXT * 12 - IN, y: open.y + IW * 12 }, { x: P(RX, 0).x - EXT * 12 - IN, y: P(0, BOT).y - EXT * 12 }, 'Cubicle area depth'),
-    dim({ x: open.x + IW * 12, y: open.y + IW * 12 + IN }, { x: P(RX, 0).x - EXT * 12, y: open.y + IW * 12 + IN }, 'Cubicle area width'),
-    // Outside size across the top of the Conference room and Office 4.
-    dim(P(CL - EXT, T - 1.5), P(EXT, T - 1.5), 'Conference and Office 4 outside'),
-  );
-
   const n = P(CL, BOT + 4);
   const note = makeLabel(n.x, n.y, "Old office: from the architect's floor plan (2804 Mission College Blvd, Suite 201).");
   objs.push({ ...note, style: { ...note.style, fontSize: 14, color: '#b45309' } });
@@ -217,7 +226,13 @@ export const oldOfficeIsOutdated = (s: Scenario) => isOldOfficeLayout(s) && (s.l
 const isStructure = (o: PlanObject) => o.kind === 'wall' || o.kind === 'room' || o.kind === 'door';
 const keyOf = (o: PlanObject) => `${o.kind}:${o.name}`;
 /** Pieces earlier drawings placed that this one no longer has. */
-const RETIRED = new Set(['furniture:Kitchen counter', 'label:Old office: rough layout']);
+const RETIRED = new Set([
+  'furniture:Kitchen counter',
+  'label:Old office: rough layout',
+  // The dimension lines of version 9 (wall lengths carry the plan's numbers instead).
+  ...['Conference', 'Office 1', 'Office 2', 'Office 3', 'Office 4', 'Office 5', 'Entry', 'Break Room', 'Server Room', 'Demo Room'].flatMap((n) => [`dimension:${n} width`, `dimension:${n} depth`]),
+  ...['Offices to Demo Room', 'Cubicle area depth', 'Cubicle area width', 'Conference and Office 4 outside', 'Office 1 to right wall'].map((n) => `dimension:${n}`),
+]);
 
 /**
  * Redraw an outdated Old office tab from the current drawing: its walls, rooms, doors and the
