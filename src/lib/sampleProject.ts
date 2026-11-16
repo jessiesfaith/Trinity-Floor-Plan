@@ -228,11 +228,13 @@ function buildSuite(): SuiteGeometry {
     else hi = mid;
   }
   const E1n = S((lo + hi) / 2, E1.y); // where the flat top wall ends and the outside wall angles down
-  // Walkway between the conference room and Cubicle Area A: 7'-0" from the conference room's top face.
+  // Walkway between the conference room and Cubicle Area A: 8'-0" from the conference room's top face.
   const walkB = confT + IW; // conference room's top face
-  const walkTop = walkB + 7;
-  // Area A is 12'-0" deep from the top wall, so it ends level with IT / Storage (also 12' deep).
-  const walkT = T_TOP - ext - 12;
+  const walkTop = walkB + 8;
+  // Area A (Nov 2026): 14'-0" along the top wall x 10'-0" deep from it.
+  const A_W = 14;
+  const A_D = 10;
+  const walkT = T_TOP - ext - A_D;
 
   const walls: Wall[] = [
     // Exterior / demising walls
@@ -292,14 +294,14 @@ function buildSuite(): SuiteGeometry {
     '#f5f8f7',
   );
   // Zones inside the open area (no walls of their own). Dimensions are clear floor.
-  // Area A: 16' along the top wall from the inside face of the A1-N1 wall to IT / Storage, and 12'
-  // deep from the top wall, level with the IT / Storage room.
+  // Area A: 14' along the top wall from the inside face of the A1-N1 wall, and 10' deep from the
+  // top wall.
   const aL = A1.x + ext;
   const aTop = T_TOP - ext;
   const aDepth = aTop - walkT;
-  const areaA = Z('Area A', 'cubicle-area', [S(aL, walkT), S(aL + 16, walkT), S(aL + 16, aTop), S(aL, aTop)], '#e3f4f3', {
-    planning: { widthFt: Math.round(aDepth * 100) / 100, lengthFt: 16, targetMin: 6, targetMax: 8, department: 'Inside Sales / Operations' },
-    notes: '16 ft cube area (marked "12x16", 6–8 people), 12 ft deep from the top wall, level with IT / Storage.',
+  const areaA = Z('Area A', 'cubicle-area', [S(aL, walkT), S(aL + A_W, walkT), S(aL + A_W, aTop), S(aL, aTop)], '#e3f4f3', {
+    planning: { widthFt: Math.round(aDepth * 100) / 100, lengthFt: A_W, targetMin: 6, targetMax: 8, department: 'Inside Sales / Operations' },
+    notes: '14 ft x 10 ft cube area (6–8 people), 10 ft deep from the top wall.',
   });
   // Area B: 12' clear from the left wall to the conference wall, 22' deep up to the kitchenette wall.
   const areaB = Z('Area B', 'cubicle-area', [S(ext, ext), S(ext + 12, ext), S(ext + 12, ext + 22), S(ext, ext + 22)], '#e3f4f3', {
@@ -309,9 +311,9 @@ function buildSuite(): SuiteGeometry {
   // Clear floor as it was with its walls (8'-1" x 11'-8"), now a zone with no walls of its own.
   const kitchen = Z('Kitchen', 'kitchen', [S(ext, kB + IW), S(kW - IW, kB + IW), S(kW - IW, T_TOP - ext), S(ext, T_TOP - ext)], '#fdf3e4');
   const walkway: PlanObject = {
-    ...makeAisle(F(aL + 8, 0).x, F(0, (walkB + walkTop) / 2).y, 16 * 12, 7 * 12),
-    name: "Walkway (7')",
-    notes: '7 ft walkway from the conference room toward Area A.',
+    ...makeAisle(F(aL + 8, 0).x, F(0, (walkB + walkTop) / 2).y, 16 * 12, 8 * 12),
+    name: "Walkway (8')",
+    notes: '8 ft walkway from the conference room toward Area A.',
   };
   for (const z of [areaA, areaB, kitchen]) z.label = { ...z.label, fontSize: 11, background: 'rgba(255,255,255,0.85)' };
   areaB.label.offset = { x: 14, y: -24 };
@@ -362,8 +364,8 @@ function buildSuite(): SuiteGeometry {
   const dims = [
     dimFt(L, L, 'Conference length (24\')', outside, { roomId: conference.id, edgeIndex: 0 }),
     dimFt(L, L, 'Conference width (14\')', -20, { roomId: conference.id, edgeIndex: 1 }),
-    dimFt(L, L, 'Area A length (16\')', overTop, { roomId: areaA.id, edgeIndex: 2 }),
-    dimFt(L, L, 'Area A width (12\')', 20, { roomId: areaA.id, edgeIndex: 3 }),
+    dimFt(L, L, 'Area A length (14\')', overTop, { roomId: areaA.id, edgeIndex: 2 }),
+    dimFt(L, L, 'Area A width (10\')', 20, { roomId: areaA.id, edgeIndex: 3 }),
     dimFt(L, L, 'Area B length (12\')', outside, { roomId: areaB.id, edgeIndex: 0 }),
     dimFt(L, L, 'Area B width (22\')', outside, { roomId: areaB.id, edgeIndex: 3 }),
   ];

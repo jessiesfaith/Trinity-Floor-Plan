@@ -80,19 +80,21 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     expect(h('IT / Storage')).toBeCloseTo(12, 2);
   });
 
-  it('cubicle areas match the marked 12 x 16 and 12 x 22 dimensions', () => {
-    expect(roomArea(room('Area A')) / 144).toBeCloseTo(16 * 12, 1); // 16' x 12', from the top wall
-    // Area A ends level with IT / Storage (both 12' deep from the top wall).
-    expect(bbox(room('Area A').points).maxY).toBeCloseTo(bbox(room('IT / Storage').points).maxY, 1);
+  it('cubicle areas are 14 x 10 (Area A) and 12 x 22 (Area B)', () => {
+    const a = bbox(room('Area A').points);
+    expect(a.width / 12).toBeCloseTo(14, 2); // along the top wall
+    expect(a.height / 12).toBeCloseTo(10, 2); // from the top wall
+    expect(objs.some((o) => o.kind === 'dimension' && o.name === "Area A length (14')")).toBe(true);
+    expect(objs.some((o) => o.kind === 'dimension' && o.name === "Area A width (10')")).toBe(true);
     expect(roomArea(room('Area B')) / 144).toBeCloseTo(264, 1);
   });
 
-  it('has a 7 ft walkway from the conference room toward Area A, and an open kitchenette with one long counter', () => {
+  it('has an 8 ft walkway from the conference room toward Area A, and an open kitchenette with one long counter', () => {
     const conf = bbox(room('Conference Room').points);
     const confTopFace = conf.minY - 5; // the conference room's clear top edge, minus its 5" wall
-    const walk = objs.find((o) => o.kind === 'aisle' && o.name === "Walkway (7')");
+    const walk = objs.find((o) => o.kind === 'aisle' && o.name === "Walkway (8')");
     if (!walk || walk.kind !== 'aisle') throw new Error('no walkway');
-    expect(walk.depth / 12).toBeCloseTo(7, 2);
+    expect(walk.depth / 12).toBeCloseTo(8, 2);
     expect((confTopFace - (walk.y + walk.depth / 2)) / 12).toBeCloseTo(0, 2); // starts at the conference room
     expect(objs.some((o) => o.kind === 'aisle' && o.name === "Walkway (5')")).toBe(false);
     // Area B runs up to the kitchenette wall: its top edge is the wall's 5" away from the kitchen floor.
@@ -126,7 +128,7 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     const v = validate(g, p.settings);
     expect(v.errorCount).toBe(0);
     const ws = g.filter((o) => o.kind === 'furniture' && o.isWorkstation);
-    expect(ws.filter((o) => o.name.startsWith('Cubicle A')).length).toBe(8);
+    expect(ws.filter((o) => o.name.startsWith('Cubicle A')).length).toBe(4); // Area A is 14' x 10'
     expect(ws.filter((o) => o.name.startsWith('Cubicle B')).length).toBeGreaterThan(0);
   });
 });

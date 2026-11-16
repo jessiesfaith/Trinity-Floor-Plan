@@ -23,6 +23,11 @@ function isFloorPlanObject(o: PlanObject, starterNames: Set<string>): boolean {
 /** Names the starter plan's own objects had in earlier releases, so updating replaces them too. */
 const PREVIOUS_STARTER_NAMES = [
   "dimension:Area B width (14')",
+  // Area A was 16' x 12' until it became 14' x 10' (Nov 2026).
+  "dimension:Area A length (16')",
+  "dimension:Area A width (12')",
+  // The walkway was 7' until it became 8' (Nov 2026).
+  "aisle:Walkway (7')",
   // Four HVAC units were drawn from the PDF; the suite has one (now "Dedicated tenant HVAC").
   'furniture:HVAC unit 1',
   'furniture:HVAC unit 2',
