@@ -1168,7 +1168,8 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
           {visibleLayer('walls') &&
             [
               ...runs
-                .filter((r) => !r.ids.some((id) => selected.has(id)) && settings.showGuides && dist(r.a, r.b) >= 12 && dist(r.a, r.b) * view.k > 30)
+                // A wall with a measured label shows it even when short on screen.
+                .filter((r) => !r.ids.some((id) => selected.has(id)) && settings.showGuides && dist(r.a, r.b) >= 12 && dist(r.a, r.b) * view.k > (walls.some((w) => r.ids.includes(w.id) && w.lengthLabel?.trim()) ? 12 : 30))
                 .map((r) => ({ key: `wr-${r.ids[0]}`, a: r.a, b: r.b, thickness: r.thickness, len: r.inside, text: walls.find((w) => r.ids.includes(w.id) && w.lengthLabel?.trim())?.lengthLabel, sel: false })),
               ...walls.filter((w) => selected.has(w.id)).map((w) => ({ key: `wl-${w.id}`, a: w.a, b: w.b, thickness: w.thickness, len: wallInside.get(w.id) ?? dist(w.a, w.b), text: undefined as string | undefined, sel: true })),
             ].map((w) => {

@@ -200,7 +200,7 @@ function buildSuite(): SuiteGeometry {
   const r = Math.hypot(1, m);
   const B = S(o2In + (ext + ext * r) / m, 0); // far tip where the angled wall meets the window wall
   // Office 1: right triangle by the main entry. Measured 13'-0" clear along its door wall, then the
-  // bottom wall was pushed 2'-0" further toward the window wall (Nov 2026 decision); labelled 14' x 13'-6".
+  // bottom wall was pushed 2'-0" further toward the window wall (Nov 2026 decision); labelled 14' x 18' (Nov 2026), with its flat top wall labelled 4'.
   // The door wall runs straight up to E1; the bottom wall runs level to the angled wall.
   const o1Top = ext + (o2In - (E1.x + IW)) * m; // inside top corner, on the angled wall
   const o1a = S(E1.x, o1Top - 13 - 2 - IW); // the right-angle corner
@@ -239,7 +239,7 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(L, B, [], 'exterior'),
     ...wallFt(B, o1e, [], 'exterior'),
     ...wallFt(o1e, E1n, [], 'exterior'),
-    ...wallFt(E1n, E1, [], 'exterior'), // Office 1's flat top wall
+    ...wallFt(E1n, E1, [], 'exterior').map((w) => ({ ...w, lengthLabel: "4'-0\"" })), // Office 1's flat top wall, labelled as measured
     ...wallFt(E1, S2, [[0.48, 36], [3.48, 36]], 'exterior'), // main entry, pair of 3' doors
     ...wallFt(S2, S1, [], 'exterior'),
     ...wallFt(S1, A1, [], 'exterior'),
@@ -268,9 +268,9 @@ function buildSuite(): SuiteGeometry {
     ...wallFt(S(div32, o3T), S(div32, 0), [], 'interior', CONTRACTOR),
     ...wallFt(S(div32, o3T), o2T, [[0.5, 36]], 'interior', CONTRACTOR), // Office 2 top wall + door, out to the angled wall
     // Office 1 (contractor) — right triangle by the main entry
-    // Labelled 14' x 13'-6" as measured (the drawing is not to scale here).
+    // Labelled 14' x 18' as measured (the drawing is not to scale here).
     ...wallFt(o1a, E1, [[0.6, 36]], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "14'-0\"" })),
-    ...wallFt(o1a, o1e, [], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "13'-6\"" })), // labelled as measured; the drawing is not reshaped
+    ...wallFt(o1a, o1e, [], 'interior', CONTRACTOR).map((w) => ({ ...w, lengthLabel: "18'-0\"" })), // labelled as measured; the drawing is not reshaped
   ];
 
   const R = (name: string, type: Room['roomType'], centerFt: Pt[], fill: string, extra: Partial<Room> = {}) =>
@@ -385,7 +385,7 @@ function buildSuite(): SuiteGeometry {
   const street = makeLabel(F(41, -4.5).x, F(41, -4.5).y, 'JULIETTE LANE  (window wall)');
   street.style = { ...street.style, color: '#4a5670', fontSize: 12, fontWeight: 'bold' };
   street.name = 'Street label';
-  const source = makeLabel(F(66, 34).x, F(66, 34).y, 'Traced from Floor_Plan.pdf (scale ±6"). Conference room and Offices 1–4 are contractor-fixed.');
+  const source = makeLabel(F(66, 36).x, F(66, 36).y, 'Traced from Floor_Plan.pdf (scale ±6"). Conference room and Offices 1–4 are contractor-fixed.');
   source.style = { ...source.style, color: '#d62828', fontSize: 9, background: '#fff5f5' };
   source.name = 'Source note';
 
