@@ -178,6 +178,8 @@ export interface Dimension extends BaseObject {
    * the canvas marks it with an asterisk and validation raises a warning.
    */
   labelOverride?: string;
+  /** A size as marked, shown in place of the drawn length (like a wall's lengthLabel): no asterisk, no warning. */
+  measuredLabel?: string;
   /** If attached to a room edge, editing the geometry moves that edge's end vertex. */
   attach?: { roomId: string; edgeIndex: number };
   color: string;

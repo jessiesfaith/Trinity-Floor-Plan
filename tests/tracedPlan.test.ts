@@ -80,12 +80,15 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     expect(h('IT / Storage')).toBeCloseTo(12, 2);
   });
 
-  it('cubicle areas are 14 x 10 (Area A) and 12 x 22 (Area B)', () => {
+  it("Area A is shaded to IT / Storage and down to the walkway, labelled 14' x 10'; Area B is 12 x 22", () => {
     const a = bbox(room('Area A').points);
-    expect(a.width / 12).toBeCloseTo(14, 2); // along the top wall
-    expect(a.height / 12).toBeCloseTo(10, 2); // from the top wall
-    expect(objs.some((o) => o.kind === 'dimension' && o.name === "Area A length (14')")).toBe(true);
-    expect(objs.some((o) => o.kind === 'dimension' && o.name === "Area A width (10')")).toBe(true);
+    expect(a.width / 12).toBeCloseTo(16, 2); // to the IT / Storage wall
+    const walk = objs.find((o) => o.kind === 'aisle' && o.name === "Walkway (8')");
+    if (!walk || walk.kind !== 'aisle') throw new Error('no walkway');
+    expect(a.maxY).toBeCloseTo(walk.y - walk.depth / 2, 3); // meets the walkway
+    const label = (n: string) => objs.find((o) => o.kind === 'dimension' && o.name === n);
+    expect(label("Area A length (14')")).toMatchObject({ measuredLabel: "14'-0\"" });
+    expect(label("Area A width (10')")).toMatchObject({ measuredLabel: "10'-0\"" });
     expect(roomArea(room('Area B')) / 144).toBeCloseTo(264, 1);
   });
 

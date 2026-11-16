@@ -287,7 +287,7 @@ export function renderSvg(objects: PlanObject[], settings: PlanSettings, opts: S
     if (opts.showDimensions) {
       for (const d of objects.filter((o): o is Dimension => o.kind === 'dimension')) {
         const g = dimensionGeometry(d);
-        const text = d.labelOverride?.trim() ? `${d.labelOverride}*` : formatLength(g.length, settings.units);
+        const text = d.labelOverride?.trim() ? `${d.labelOverride}*` : d.measuredLabel?.trim() || formatLength(g.length, settings.units);
         const ext1 = add(d.a, scale(g.n, d.offset + Math.sign(d.offset || 1) * 4));
         const ext2 = add(d.b, scale(g.n, d.offset + Math.sign(d.offset || 1) * 4));
         out.push(`<g stroke="${d.color}" stroke-width="0.7" fill="none"><line x1="${d.a.x}" y1="${d.a.y}" x2="${ext1.x}" y2="${ext1.y}"/><line x1="${d.b.x}" y1="${d.b.y}" x2="${ext2.x}" y2="${ext2.y}"/><line x1="${g.a2.x}" y1="${g.a2.y}" x2="${g.b2.x}" y2="${g.b2.y}"/></g>`);

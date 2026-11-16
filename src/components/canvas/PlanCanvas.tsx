@@ -1089,7 +1089,7 @@ export default function PlanCanvas({ validation, onDropTemplate, registerViewCen
             dims.map((d) => {
               const g = dimensionGeometry(d);
               const override = d.labelOverride?.trim();
-              const text = override ? `${override} *` : fmt(g.length);
+              const text = override ? `${override} *` : d.measuredLabel?.trim() || fmt(g.length);
               const color = selected.has(d.id) ? TEAL : d.color;
               const ext = (p: Pt) => add(p, vscale(g.n, d.offset + Math.sign(d.offset || 1) * 4));
               const e1 = ext(d.a);
