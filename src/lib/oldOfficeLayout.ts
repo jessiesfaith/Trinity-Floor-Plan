@@ -1,7 +1,7 @@
-// The "Old office" tab: the office we are moving from, drawn from a hand sketch. It is its own
-// layout (not the Trinity suite): the other tabs leave it alone, and "Update floor plan" only
-// redraws its walls, rooms and doors when this drawing has changed (OLD_OFFICE_VERSION), keeping
-// the cubicles and anything else added to it. Sizes are rough until measured, except where noted.
+// The "Old office" tab: the office we are moving from, drawn from the architect's floor plan. It is
+// its own layout (not the Trinity suite): the other tabs leave it alone, and "Update floor plan"
+// only redraws its walls, rooms and doors when this drawing has changed (OLD_OFFICE_VERSION),
+// keeping the cubicles and anything else added to it.
 
 import type { PlanObject, Project, Pt, Room, Scenario } from '@/types/plan';
 import { BUILT_IN_TEMPLATES } from './library';
@@ -14,10 +14,14 @@ export const isOldOfficeLayout = (s: Scenario) => s.purpose === OLD_OFFICE_PURPO
 export const oldOfficeLayoutOf = (p: Project) => p.scenarios.find(isOldOfficeLayout);
 
 /** Bump when the drawing below changes, so saved Old office tabs get redrawn by Update floor plan. */
-export const OLD_OFFICE_VERSION = 7;
+export const OLD_OFFICE_VERSION = 8;
 
-const ROUGH = 'Approximate: drawn from the hand sketch, not measured yet.';
-const P = (x: number, y: number): Pt => ({ x: x * 12, y: y * 12 }); // feet -> plan inches
+const PLAN = "From the architect's floor plan (Suite 201).";
+// The drawing is shifted so its open cubicle area lands where the earlier sketch's cubicle area
+// was: cubicles added by hand to older copies of this tab stay in the open area.
+const OX = 2;
+const OY = -12.5;
+const P = (x: number, y: number): Pt => ({ x: (x + OX) * 12, y: (y + OY) * 12 }); // feet -> plan inches
 const rect = (x0: number, y0: number, x1: number, y1: number) => [P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1)];
 const tpl = (id: string) => BUILT_IN_TEMPLATES.find((t) => t.id === id)!;
 
@@ -29,83 +33,89 @@ function walls(type: 'exterior' | 'interior', ...pts: [number, number][]) {
 }
 
 /**
- * The old office, in feet: x to the right, y down. The row with Office 1, the lobby, kitchen and
- * IT / Storage starts at y 31, where it was first drawn, so cubicles placed in earlier versions stay
- * put; the offices column and the cubicle areas grow upward from there.
+ * The old office (2804 Mission College Blvd, Suite 201), in feet from the architect's floor plan:
+ * x to the right, y down, 0,0 at the top-left corner of Office 1. Offices 1, 2, 3 and 5 run along
+ * the top wall; the Conference room and Office 4 sit above and left of them; the Entry, Break,
+ * Server and Demo rooms are on the left, and the open cubicle area fills the rest. Room sizes are
+ * the plan's; the rest is scaled from the drawing.
  */
 export function oldOfficeObjects(): PlanObject[] {
   // Walls are drawn on their centerlines; rooms are the clear floor between wall faces.
   const EXT = 4 / 12; // half an 8" outside wall
   const IW = 2.5 / 12; // half a 5" inside wall
-  // Offices 2, 3 and 4 (measured): the same size, 12'-0" wide x 10'-0" deep clear each, stacked
-  // above Office 2's bottom wall between the outside wall at x 10 and the hallway wall at XR.
-  // Office 5, above them, is the longest office: 12'-0" deep (until measured). The top wall sits
-  // above Office 5, with the printer area along it, above cubicles placed near the old top wall.
-  const XR = 10 + EXT + 12 + IW;
-  const ROW = 31; // Office 2's bottom wall: Office 1, the lobby, kitchen and IT start here
-  const Y3 = ROW - IW - 10 - IW; // Office 3 / Office 2 wall
-  const Y4 = Y3 - IW - 10 - IW; // Office 4 / Office 3 wall
-  const Y5 = Y4 - IW - 10 - IW; // Office 5 / Office 4 wall
-  const TOP = Y5 - IW - 12 - EXT; // top outside wall
-  // Office 1 (measured): 13'-0" wide x 11'-0" deep clear. Its left wall lines up with Conference
-  // Room 1's; its right wall (with its door) faces the lobby. Conference Room 1 sits right below it,
-  // down to the same bottom wall as before, and reaches past Office 1 far enough for its top door.
-  const O1L = 10 - IW - 11 - EXT; // outside wall on the left of Office 1 and Conference Room 1
-  const O1R = O1L + EXT + 13 + IW; // Office 1 / lobby wall
-  const O1B = ROW + EXT + 11 + IW; // wall between Office 1 and Conference Room 1
-  const CR = O1R + IW + 3 + 0.5; // Conference Room 1's right wall: room for a 3' door past Office 1
-  const CRB = ROW + EXT + 11 + IW + 15.5; // Conference Room 1's bottom (outside) wall
-  const BOT = ROW + 17.5; // bottom outside wall of the lobby, kitchen and IT / Storage
-  const C2T = ROW - 11; // Conference Room 2's top wall
-  const RX = 49.5; // right outside wall, just past the cubicles in Cubicle area 2 (was 53)
-  const o1Door = O1B - IW - 0.33; // Office 1 door hinge, near the bottom of its right wall
+  const ft = (f: number, i = 0) => f + i / 12;
+  // Offices along the top wall: 8'4", 8'4", 9'7" and 19'6" wide, all 11'6" deep.
+  const X1 = IW + ft(8, 4) + IW; // Office 1 / Office 2
+  const X2 = X1 + IW + ft(8, 4) + IW; // Office 2 / Office 3
+  const X3 = X2 + IW + ft(9, 7) + IW; // Office 3 / Office 5
+  const RX = X3 + IW + ft(19, 6) + EXT; // right outside wall (about 47' from Office 1's left wall)
+  const YB = EXT + ft(11, 6) + IW; // offices' bottom wall
+  // Office 4 (9' x 12'9") and the Conference room (12'9" deep) above the Entry.
+  const O4L = -EXT - 9 - IW; // Office 4 / Conference (Office 4's right wall is an outside wall)
+  const T = -IW - ft(12, 9) - EXT; // top outside wall of Office 4 and the Conference room
+  // The plan writes 39' on the Conference room, but drawn to scale it is about 30' wide (39' with
+  // Office 4), so it is drawn 30' wide.
+  const CL = O4L - IW - 30 - EXT;
+  const EL = -18; // Entry's left wall, with the double doors to the common lobby
+  // 19'3" from the offices down to the Demo room (12' x 10', glass front); the Break and Server
+  // rooms are left of it.
+  const DT = YB + IW + ft(19, 3) + IW; // Demo room's glass front
+  const BOT = DT + IW + 10 + EXT; // bottom outside wall
+  const DR = IW + 12 + IW; // Demo room's right wall
+  const BL = -15; // Break and Server rooms' left wall
+  const ES = 18.25; // Entry / Break room
+  const SV = 35; // Break room / Server room
+  const CUT = 2.5; // the Server room's cut-off corner
+
   const wallList = [
-    // Outside walls
-    ...walls('exterior', [10, TOP], [RX, TOP], [RX, BOT], [CR, BOT], [CR, CRB], [O1L, CRB], [O1L, ROW], [10, ROW], [10, TOP]),
-    // Offices along the hallway
-    ...walls('interior', [XR, TOP], [XR, ROW]),
-    ...walls('interior', [10, Y5], [XR, Y5]),
-    ...walls('interior', [10, Y4], [XR, Y4]),
-    ...walls('interior', [10, Y3], [XR, Y3]),
-    ...walls('interior', [10, ROW], [XR, ROW]),
-    // Office 1: its door (to the lobby) is near the bottom of its right wall.
-    ...walls('interior', [O1R, ROW], [O1R, o1Door - 3]),
-    ...walls('interior', [O1R, o1Door], [O1R, O1B]),
-    ...walls('interior', [O1L, O1B], [O1R, O1B]), // Office 1 / Conference Room 1
-    // Conference Room 1's top-right corner is two doors: in its top wall (x O1R to CR) and in its
-    // right wall (y O1B to BOT), both onto the lobby.
-    // Kitchen, IT / Storage and Conference Room 2
-    ...walls('interior', [25, ROW], [25, BOT]),
-    ...walls('interior', [25, ROW], [RX, ROW]),
-    ...walls('interior', [41, C2T], [RX, C2T]),
-    ...walls('interior', [41, C2T], [41, ROW + 0.5]),
-    ...walls('interior', [41, ROW + 3.5], [41, BOT]),
+    // Outside walls (gaps for the back door and the Entry's double doors)
+    ...walls('exterior', [CL, T], [0, T], [0, 0], [RX, 0], [RX, BOT - 4]),
+    ...walls('exterior', [RX, BOT - 1], [RX, BOT], [BL + CUT, BOT], [BL, BOT - CUT], [BL, ES], [EL, ES], [EL, 11]),
+    ...walls('exterior', [EL, 5], [EL, 0]),
+    ...walls('interior', [EL, 0], [CL, 0]), // Conference / common lobby
+    // Office 4 / Conference, and their walls onto the Entry (each with a door)
+    ...walls('interior', [O4L, T], [O4L, 0]),
+    ...walls('interior', [EL, 0], [-17.5, 0]),
+    ...walls('interior', [-14.5, 0], [O4L, 0]),
+    ...walls('interior', [O4L, 0], [O4L + 1, 0]),
+    ...walls('interior', [O4L + 4, 0], [0, 0]),
+    // Offices 1, 2, 3 and 5
+    ...walls('interior', [0, 0], [0, YB]),
+    ...walls('interior', [X1, 0], [X1, YB]),
+    ...walls('interior', [X2, 0], [X2, YB]),
+    ...walls('interior', [X3, 0], [X3, YB]),
+    ...walls('interior', [0, YB], [1, YB]),
+    ...walls('interior', [4, YB], [X2 - 4, YB]),
+    ...walls('interior', [X2 - 1, YB], [X2 + 1, YB]),
+    ...walls('interior', [X2 + 4, YB], [X3 + 1, YB]),
+    ...walls('interior', [X3 + 4, YB], [RX, YB]),
+    // Break room and Server room
+    ...walls('interior', [BL, ES], [0, ES]),
+    ...walls('interior', [0, ES], [0, ES + 0.5]),
+    ...walls('interior', [0, ES + 3.5], [0, BOT]),
+    ...walls('interior', [BL, SV], [-4, SV]),
+    ...walls('interior', [-1, SV], [0, SV]),
+    // Demo room: glass front with its door at the left
+    ...walls('interior', [0, DT], [0.75, DT]),
+    ...walls('interior', [3.75, DT], [DR, DT]),
+    ...walls('interior', [DR, DT], [DR, BOT]),
   ];
-  // The outside wall above Office 1 reads as the office's measured 13' width.
-  const isAt = (q: Pt, x: number, y: number) => Math.abs(q.x - x * 12) < 0.01 && Math.abs(q.y - y * 12) < 0.01;
-  for (const w of wallList)
-    if ((isAt(w.a, O1L, ROW) && isAt(w.b, 10, ROW)) || (isAt(w.a, 10, ROW) && isAt(w.b, O1L, ROW))) w.lengthLabel = "13'-0\"";
-  // Office 1's right wall (both sides of its door) reads as its measured 11' depth.
-  for (const w of wallList) if (Math.abs(w.a.x - O1R * 12) < 0.01 && Math.abs(w.b.x - O1R * 12) < 0.01) w.lengthLabel = "11'-0\"";
-  const room = (name: string, type: Room['roomType'], centerline: Pt[], fill: string, notes = ROUGH) =>
+  const room = (name: string, type: Room['roomType'], centerline: Pt[], fill: string, notes = PLAN) =>
     makeRoom(name, type, insetByWalls(centerline, wallList), fill, { notes });
-  const MEASURED_OFFICE = "Measured: 12' wide x 10' deep clear.";
 
   const objs: PlanObject[] = [
-    room('Office 5', 'office', rect(10, TOP, XR, Y5), '#eef0f6', "The longest office: 12' deep (12' wide like Offices 2-4) until measured."),
-    room('Office 4', 'office', rect(10, Y5, XR, Y4), '#eef0f6', MEASURED_OFFICE),
-    room('Office 3', 'office', rect(10, Y4, XR, Y3), '#eef0f6', MEASURED_OFFICE),
-    room('Office 2', 'office', rect(10, Y3, XR, ROW), '#eef0f6', MEASURED_OFFICE),
-    room('Office 1', 'office', rect(O1L, ROW, O1R, O1B), '#eef0f6', "Measured: 13' wide x 11' deep clear."),
-    room('Lobby', 'entrance', [P(O1R, ROW), P(25, ROW), P(25, BOT), P(CR, BOT), P(CR, O1B), P(O1R, O1B)], '#f4f6f9'),
-    room('Conference Room 1', 'conference', rect(O1L, O1B, CR, CRB), '#e9eef8'),
-    room('Printer area', 'open', rect(25, TOP, 41, TOP + 6), '#f4f6f9'),
-    // The hallway by the offices is open to the cubicles, so it is part of the same area.
-    room('Cubicle area', 'cubicle-area', [P(XR, TOP), P(25, TOP), P(25, TOP + 6), P(41, TOP + 6), P(41, ROW), P(XR, ROW)], '#e3f4f3'),
-    room('Cubicle area 2', 'cubicle-area', rect(41, TOP, RX, C2T), '#e3f4f3'),
-    room('Conference Room 2', 'conference', rect(41, C2T, RX, ROW), '#e9eef8'),
-    room('Kitchen', 'kitchen', rect(25, ROW, 41, BOT), '#fbf3e4'),
-    room('IT / Storage', 'it', rect(41, ROW, RX, BOT), '#eef2f7'),
+    room('Conference', 'conference', rect(CL, T, O4L, 0), '#e9eef8', "12'9\" deep. The plan says 39' wide; drawn about 30' to match the drawing's scale."),
+    room('Office 4', 'office', rect(O4L, T, 0, 0), '#eef0f6', "Architect's plan: 9' x 12'9\"."),
+    room('Office 1', 'office', rect(0, 0, X1, YB), '#eef0f6', "Architect's plan: 8'4\" x 11'6\"."),
+    room('Office 2', 'office', rect(X1, 0, X2, YB), '#eef0f6', "Architect's plan: 8'4\" x 11'6\"."),
+    room('Office 3', 'office', rect(X2, 0, X3, YB), '#eef0f6', "Architect's plan: 9'7\" x 11'6\"."),
+    room('Office 5', 'office', rect(X3, 0, RX, YB), '#eef0f6', "Architect's plan: 19'6\" x 11'6\"."),
+    room('Entry', 'entrance', rect(EL, 0, 0, ES), '#f4f6f9'),
+    room('Break Room', 'kitchen', rect(BL, ES, 0, SV), '#fbf3e4'),
+    room('Server Room', 'it', [P(BL, SV), P(0, SV), P(0, BOT), P(BL + CUT, BOT), P(BL, BOT - CUT)], '#eef2f7'),
+    room('Demo Room', 'conference', rect(0, DT, DR, BOT), '#e9eef8', "Architect's plan: 12' x 10', glass front."),
+    // The open area below the offices, where the cubicles go; it opens onto the Entry.
+    room('Cubicle area', 'cubicle-area', [P(0, YB), P(RX, YB), P(RX, BOT), P(DR, BOT), P(DR, DT), P(0, DT)], '#e3f4f3'),
     ...wallList,
   ];
 
@@ -117,24 +127,39 @@ export function oldOfficeObjects(): PlanObject[] {
     const swing: 1 | -1 = side.x * (to.x - hinge.x) + side.y * (to.y - hinge.y) > 0 ? 1 : -1;
     return makeDoor(hinge.x, hinge.y, (Math.atan2(dir.y, dir.x) * 180) / Math.PI, 36, swing, name);
   };
+  const R = { x: 1, y: 0 };
+  const L = { x: -1, y: 0 };
+  const D = { x: 0, y: 1 };
+  const U = { x: 0, y: -1 };
   objs.push(
-    door([41, ROW + 0.5], { x: 0, y: 1 }, [45, ROW + 2], 'IT / Storage door'), // from the kitchen side
-    door([O1R, o1Door], { x: 0, y: -1 }, [O1R - 2, o1Door - 2], 'Office 1 door'), // from the lobby
-    door([O1R + IW, O1B], { x: 1, y: 0 }, [O1R + 1.5, O1B - 2], 'Conference Room 1 door (top)'), // swings out to the lobby
-    door([CR, BOT - EXT], { x: 0, y: -1 }, [15, BOT - 2], 'Conference Room 1 door (side)'),
+    door([-14.5, 0], L, [-16, -2], 'Conference door'),
+    door([O4L + 1, 0], R, [O4L + 2.5, -2], 'Office 4 door'),
+    door([1, YB], R, [2.5, YB - 2], 'Office 1 door'),
+    door([X2 - 1, YB], L, [X2 - 2.5, YB - 2], 'Office 2 door'),
+    door([X2 + 1, YB], R, [X2 + 2.5, YB - 2], 'Office 3 door'),
+    door([X3 + 1, YB], R, [X3 + 2.5, YB - 2], 'Office 5 door'),
+    door([EL, 5], D, [EL + 2, 6.5], 'Entry door (left)'),
+    door([EL, 11], U, [EL + 2, 9.5], 'Entry door (right)'),
+    door([0, ES + 0.5], D, [-2, ES + 2], 'Break Room door'),
+    door([-1, SV], L, [-2.5, SV + 2], 'Server Room door'),
+    door([0.75, DT], R, [2.25, DT + 2], 'Demo Room door'),
+    door([RX, BOT - 1], U, [RX - 2, BOT - 2.5], 'Back door'),
   );
 
-  // The cubicle areas are left empty: cubicles are added by hand.
+  // The cubicle area is left empty: cubicles are added by hand.
 
-  // A few fixtures from the sketch.
+  // A few fixtures from the plan.
+  const conf = P((CL + O4L) / 2, T / 2);
+  const counter = P(BL + EXT + 1.1, (ES + SV) / 2);
+  const printer = P(RX - 3.5, 26);
   objs.push(
-    { ...furnitureFromTemplate(tpl('conf-8'), ((O1L + CR) / 2) * 12, ((O1B + CRB) / 2) * 12, 'Conference table', 90), notes: ROUGH },
-    { ...furnitureFromTemplate(tpl('conf-8'), ((41 + RX) / 2) * 12, (ROW - 5.5) * 12, 'Conference table', 90), notes: ROUGH },
-    { ...furnitureFromTemplate(tpl('printer'), 33 * 12, (TOP + 3) * 12, 'Printer / copier') },
-    { ...furnitureFromTemplate(tpl('storage-cab'), 32 * 12, BOT * 12 - 17, 'Kitchen counter'), width: 144, depth: 24, notes: ROUGH },
+    furnitureFromTemplate(tpl('conf-12'), conf.x, conf.y, 'Conference table'),
+    furnitureFromTemplate(tpl('printer'), printer.x, printer.y, 'Printer / copier'),
+    { ...furnitureFromTemplate(tpl('storage-cab'), counter.x, counter.y, 'Break room counter', 90), width: 96, depth: 24 },
   );
 
-  const note = makeLabel(O1L * 12, (CRB + 3) * 12, 'Old office: rough layout from the hand sketch. Sizes are placeholders until measured.');
+  const n = P(CL, BOT + 3);
+  const note = makeLabel(n.x, n.y, "Old office: from the architect's floor plan (2804 Mission College Blvd, Suite 201).");
   objs.push({ ...note, style: { ...note.style, fontSize: 14, color: '#b45309' } });
   return objs;
 }
@@ -144,7 +169,7 @@ function oldOfficeLayout(): Scenario {
   return {
     id: uid('s'),
     name: 'Old office',
-    description: 'The office we are moving from (rough layout from a hand sketch).',
+    description: "The office we are moving from (from the architect's floor plan).",
     objects: oldOfficeObjects(),
     purpose: OLD_OFFICE_PURPOSE,
     layoutVersion: OLD_OFFICE_VERSION,
@@ -167,6 +192,8 @@ export const oldOfficeIsOutdated = (s: Scenario) => isOldOfficeLayout(s) && (s.l
 
 const isStructure = (o: PlanObject) => o.kind === 'wall' || o.kind === 'room' || o.kind === 'door';
 const keyOf = (o: PlanObject) => `${o.kind}:${o.name}`;
+/** Pieces earlier drawings placed that this one no longer has. */
+const RETIRED = new Set(['furniture:Kitchen counter', 'label:Old office: rough layout']);
 
 /**
  * Redraw an outdated Old office tab from the current drawing: its walls, rooms, doors and the
@@ -177,6 +204,6 @@ export function refreshOldOffice(s: Scenario): Scenario {
   if (!oldOfficeIsOutdated(s)) return s;
   const fresh = oldOfficeObjects();
   const drawn = new Set(fresh.filter((o) => !isStructure(o)).map(keyOf));
-  const kept = s.objects.filter((o) => !isStructure(o) && !drawn.has(keyOf(o)));
+  const kept = s.objects.filter((o) => !isStructure(o) && !drawn.has(keyOf(o)) && !RETIRED.has(keyOf(o)));
   return { ...s, objects: [...fresh, ...kept], layoutVersion: OLD_OFFICE_VERSION, revision: s.revision + 1, updatedAt: new Date().toISOString() };
 }

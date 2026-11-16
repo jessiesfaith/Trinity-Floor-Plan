@@ -16,11 +16,11 @@ describe('Old office tab', () => {
     expect(p.activeScenarioId).toBe(s.id);
     expect(openOldOffice(openFloorPlan(p)).scenarios.filter(isOldOfficeLayout)).toHaveLength(1);
     const rooms = s.objects.filter((o): o is Room => o.kind === 'room').map((r) => r.name);
-    for (const n of ['Office 1', 'Office 2', 'Office 3', 'Office 4', 'Office 5', 'Lobby', 'Conference Room 1', 'Conference Room 2', 'Kitchen', 'IT / Storage', 'Printer area'])
+    for (const n of ['Office 1', 'Office 2', 'Office 3', 'Office 4', 'Office 5', 'Entry', 'Conference', 'Break Room', 'Server Room', 'Demo Room', 'Cubicle area'])
       expect(rooms).toContain(n);
     // Cubicles are added by hand, so the cubicle areas start empty.
     expect(s.objects.some((o) => o.kind === 'furniture' && (o as Furniture).type === 'cubicle')).toBe(false);
-    expect(rooms.filter((n) => n.startsWith('Cubicle area'))).toHaveLength(2);
+    expect(rooms.filter((n) => n.startsWith('Cubicle area'))).toHaveLength(1);
   });
 
   it('is never the floor plan and is left alone by Update floor plan', () => {
@@ -45,25 +45,24 @@ describe('Old office tab', () => {
     expect(errors.map((i) => i.message)).toEqual([]);
   });
 
-  it("Office 1 is 13 wide x 11 deep, Offices 2-4 are 12 x 10 and Office 5 is the longest; Office 1's door to the lobby; Conference Room 1 has two doors at its top-right corner", () => {
+  it("uses the architect's room sizes, with a door into every room", () => {
     const s = oldOfficeLayoutOf(openOldOffice(createSampleProject()))!;
     const room = (n: string) => s.objects.find((o): o is Room => o.kind === 'room' && o.name === n)!;
-    const b = bbox(room('Office 1').points);
-    expect([b.width / 12, b.height / 12].map((v) => Math.round(v * 1000) / 1000)).toEqual([13, 11]);
-    for (const n of ['Office 2', 'Office 3', 'Office 4']) {
-      const o = bbox(room(n).points);
-      expect([o.width / 12, o.height / 12].map((v) => Math.round(v * 1000) / 1000), n).toEqual([12, 10]);
-    }
-    expect(bbox(room('Office 5').points).height / 12).toBeGreaterThan(10);
+    const size = (n: string) => {
+      const b = bbox(room(n).points);
+      return [b.width, b.height].map((v) => Math.round(v * 10) / 10); // inches
+    };
+    expect(size('Office 1')).toEqual([100, 138]); // 8'4" x 11'6"
+    expect(size('Office 2')).toEqual([100, 138]);
+    expect(size('Office 3')).toEqual([115, 138]); // 9'7"
+    expect(size('Office 5')).toEqual([234, 138]); // 19'6"
+    expect(size('Office 4')).toEqual([108, 153]); // 9' x 12'9"
+    expect(size('Demo Room')).toEqual([144, 120]); // 12' x 10'
+    expect(size('Conference')[1]).toBe(153);
     const doors = s.objects.filter((o) => o.kind === 'door').map((o) => o.name);
-    expect(doors).toContain('Office 1 door');
-    // The outside wall above Office 1 is labelled with its measured width.
-    expect(s.objects.some((o) => o.kind === 'wall' && o.lengthLabel === "13'-0\"")).toBe(true);
-    expect(s.objects.some((o) => o.kind === 'wall' && o.lengthLabel === "11'-0\"")).toBe(true);
-    expect(doors.filter((n) => n.startsWith('Conference Room 1 door'))).toHaveLength(2);
-    expect(doors).not.toContain('Office 1 to Conference Room 1');
-    // Office 1 sits right on top of Conference Room 1, with just their 5" wall between.
-    expect(bbox(room('Conference Room 1').points).minY - b.maxY).toBeCloseTo(5, 6);
+    for (const n of ['Conference', 'Office 1', 'Office 2', 'Office 3', 'Office 4', 'Office 5', 'Break Room', 'Server Room', 'Demo Room'])
+      expect(doors).toContain(`${n} door`);
+    expect(doors.filter((n) => n.startsWith('Entry door'))).toHaveLength(2);
   });
 
   it('Update floor plan redraws an older Old office tab, keeping cubicles added to it', () => {
@@ -77,7 +76,7 @@ describe('Old office tab', () => {
     expect(after.layoutVersion).toBe(OLD_OFFICE_VERSION);
     expect(after.objects.filter((o) => o.name === 'Cubicle 01')).toHaveLength(1);
     expect(after.objects.some((o) => o.name === 'Office 1 door')).toBe(true);
-    expect(after.objects.filter((o) => o.name === 'Conference table')).toHaveLength(2);
+    expect(after.objects.filter((o) => o.name === 'Conference table')).toHaveLength(1);
     expect(after.objects.length).toBe(oldOfficeLayoutOf(p)!.objects.length + 1);
   });
 
