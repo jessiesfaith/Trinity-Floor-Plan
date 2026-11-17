@@ -238,7 +238,7 @@ function buildSuite(): SuiteGeometry {
     // Exterior / demising walls
     ...wallFt(L, B, [], 'exterior'),
     ...wallFt(B, o1e, [], 'exterior'),
-    ...wallFt(o1e, E1n, [], 'exterior'),
+    ...wallFt(o1e, E1n, [], 'exterior').map((w) => ({ ...w, lengthLabel: "19'-0\"" })), // Office 1's slanted wall, labelled as measured
     ...wallFt(E1n, E1, [], 'exterior').map((w) => ({ ...w, lengthLabel: "4'-0\"" })), // Office 1's flat top wall, labelled as measured
     ...wallFt(E1, S2, [[0.48, 36], [3.48, 36]], 'exterior'), // main entry, pair of 3' doors
     ...wallFt(S2, S1, [], 'exterior'),

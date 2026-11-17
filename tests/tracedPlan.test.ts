@@ -53,6 +53,7 @@ describe('traced Trinity plan (Floor_Plan.pdf)', () => {
     expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(7, 2);
     const dim = objs.find((o) => o.kind === 'dimension' && o.name === "Office 1 width (7')");
     expect(dim && dim.kind === 'dimension' && Math.hypot(dim.b.x - dim.a.x, dim.b.y - dim.a.y) / 12).toBeCloseTo(7, 2);
+    expect(objs.some((o) => o.kind === 'wall' && o.lengthLabel === "19'-0\"")).toBe(true); // slanted wall, as measured
     expect(objs.some((o) => o.kind === 'door' && o.name === 'Office 1 door')).toBe(true);
   });
 
